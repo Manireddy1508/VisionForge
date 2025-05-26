@@ -4,23 +4,23 @@ from prompting.constants import (
     MIN_WORD_COUNT,
     PROMPT_PREFIX,
     PROMPT_SUFFIX,
-    PROMPT_SETTINGS
+    PROMPT_SETTINGS,
 )
 
 # === Flexible Rules ===
-FLEXIBLE_PREFIX_PATTERNS = [
-    r"it's very important that"
-]
+FLEXIBLE_PREFIX_PATTERNS = [r"it's very important that"]
 
 FLEXIBLE_SUFFIX_PATTERNS = [
     r"take all the time you need(?:ed)?(?:.*?)?achieve the best possible result",
-    r"achieve the best possible result"
+    r"achieve the best possible result",
 ]
+
 
 class PromptValidator:
     """
     Validates and cleans prompts according to specified rules.
     """
+
     def __init__(self, settings: Dict = PROMPT_SETTINGS, mode: str = "lenient"):
         """
         Initialize the prompt validator.
@@ -30,7 +30,7 @@ class PromptValidator:
             mode (str): Validation mode ("strict" or "lenient")
         """
         self.settings = settings
-        self.strict_mode = (mode == "strict")
+        self.strict_mode = mode == "strict"
         print(f"\n🎯 [DEBUG] Initialized PromptValidator in {mode} mode")
 
     def is_valid(self, prompt: str, allow_manual: bool = False) -> bool:
@@ -51,7 +51,9 @@ class PromptValidator:
             print("⛔ [VALIDATOR] Too few words")
             return False if not allow_manual else True
 
-        if self.settings.get("enforce_single_sentence") and not self._is_single_sentence(prompt):
+        if self.settings.get(
+            "enforce_single_sentence"
+        ) and not self._is_single_sentence(prompt):
             print("⛔ [VALIDATOR] More than one sentence")
             return False if not allow_manual else True
 
@@ -63,7 +65,9 @@ class PromptValidator:
             print("⛔ [VALIDATOR] Starts with number")
             return False if not allow_manual else True
 
-        if self.settings.get("require_realistic_scale") and not self._has_valid_suffix(prompt, words):
+        if self.settings.get("require_realistic_scale") and not self._has_valid_suffix(
+            prompt, words
+        ):
             print("⛔ [VALIDATOR] Suffix not found")
             return False if not allow_manual else True
 
@@ -132,13 +136,14 @@ class PromptValidator:
             cleaned = cleaned.lstrip("0123456789. )").strip()
         return cleaned
 
+
 def extract_valid_prompts(
     raw_output: str,
     num_prompts: int,
     fallback_prompt: str,
     mode: str = "lenient",
     allow_manual_override: bool = False,
-    return_metadata: bool = False
+    return_metadata: bool = False,
 ) -> List[str] | List[Tuple[str, bool]]:
     """
     Extract and clean valid prompts from raw GPT output.
@@ -180,4 +185,4 @@ def extract_valid_prompts(
         print(f"📝 [DEBUG] Truncated to {num_prompts} prompts")
 
     print(f"✅ [DEBUG] Extracted {len(results)} valid prompts")
-    return results 
+    return results

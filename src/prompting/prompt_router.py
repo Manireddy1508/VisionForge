@@ -21,28 +21,80 @@ INTENT_LABELS = [
     "social-trend",
     "educational-content",
     "campaign-launch",
-    "experimental-style"
+    "experimental-style",
 ]
 
 # === Intent Categories ===
 INTENT_CATEGORIES = {
-    "commercial": ["product-ad", "service-promotion", "brand-storytelling", "campaign-launch"],
+    "commercial": [
+        "product-ad",
+        "service-promotion",
+        "brand-storytelling",
+        "campaign-launch",
+    ],
     "artistic": ["artistic-expression", "experimental-style"],
     "social": ["public-awareness", "social-trend"],
-    "educational": ["educational-content"]
+    "educational": ["educational-content"],
 }
 
 # === Intent Keywords ===
 INTENT_KEYWORDS = {
-    "product-ad": ["product", "advertisement", "commercial", "marketing", "brand", "promotion"],
+    "product-ad": [
+        "product",
+        "advertisement",
+        "commercial",
+        "marketing",
+        "brand",
+        "promotion",
+    ],
     "service-promotion": ["service", "offer", "promotion", "business", "professional"],
-    "public-awareness": ["awareness", "campaign", "cause", "social", "public", "community"],
-    "brand-storytelling": ["brand", "story", "narrative", "identity", "values", "mission"],
-    "artistic-expression": ["art", "creative", "artistic", "expression", "style", "medium"],
+    "public-awareness": [
+        "awareness",
+        "campaign",
+        "cause",
+        "social",
+        "public",
+        "community",
+    ],
+    "brand-storytelling": [
+        "brand",
+        "story",
+        "narrative",
+        "identity",
+        "values",
+        "mission",
+    ],
+    "artistic-expression": [
+        "art",
+        "creative",
+        "artistic",
+        "expression",
+        "style",
+        "medium",
+    ],
     "social-trend": ["trend", "viral", "social", "media", "popular", "current"],
-    "educational-content": ["education", "learn", "teach", "inform", "explain", "demonstrate"],
-    "campaign-launch": ["launch", "campaign", "announcement", "release", "introduction"],
-    "experimental-style": ["experimental", "innovative", "unique", "creative", "artistic"]
+    "educational-content": [
+        "education",
+        "learn",
+        "teach",
+        "inform",
+        "explain",
+        "demonstrate",
+    ],
+    "campaign-launch": [
+        "launch",
+        "campaign",
+        "announcement",
+        "release",
+        "introduction",
+    ],
+    "experimental-style": [
+        "experimental",
+        "innovative",
+        "unique",
+        "creative",
+        "artistic",
+    ],
 }
 
 # === Base system message for GPT ===
@@ -66,6 +118,7 @@ Recognized labels include:
 You may infer a new label if appropriate, but return only the inferred label.
 """.strip()
 
+
 def extract_keywords(text: str) -> List[str]:
     """
     Extract relevant keywords from the text.
@@ -78,12 +131,28 @@ def extract_keywords(text: str) -> List[str]:
     """
     # Convert to lowercase and split into words
     words = text.lower().split()
-    
+
     # Remove common stop words and short words
-    stop_words = {"a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"}
+    stop_words = {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+    }
     keywords = [word for word in words if word not in stop_words and len(word) > 2]
-    
+
     return keywords
+
 
 def calculate_intent_scores(text: str) -> Dict[str, float]:
     """
@@ -97,18 +166,19 @@ def calculate_intent_scores(text: str) -> Dict[str, float]:
     """
     keywords = extract_keywords(text)
     scores = {intent: 0.0 for intent in INTENT_LABELS}
-    
+
     for intent, intent_keywords in INTENT_KEYWORDS.items():
         for keyword in keywords:
             if keyword in intent_keywords:
                 scores[intent] += 1.0
-    
+
     # Normalize scores
     total = sum(scores.values())
     if total > 0:
-        scores = {k: v/total for k, v in scores.items()}
-    
+        scores = {k: v / total for k, v in scores.items()}
+
     return scores
+
 
 def classify_prompt_intent(prompt: str) -> str:
     """
@@ -121,43 +191,46 @@ def classify_prompt_intent(prompt: str) -> str:
         str: The classified intent label
     """
     print(f"\n🎯 [DEBUG] Classifying intent for prompt: {prompt}")
-    
+
     # Calculate keyword-based scores
     keyword_scores = calculate_intent_scores(prompt)
     print("\n📊 [DEBUG] Keyword-based scores:")
-    for intent, score in sorted(keyword_scores.items(), key=lambda x: x[1], reverse=True):
+    for intent, score in sorted(
+        keyword_scores.items(), key=lambda x: x[1], reverse=True
+    ):
         print(f"  {intent}: {score:.2f}")
-    
+
     try:
         # Get GPT classification
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
             messages=[
                 {"role": "system", "content": DEFAULT_INTENT_SYSTEM_MESSAGE},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
             temperature=DEFAULT_TEMPERATURE,
-            max_tokens=DEFAULT_MAX_TOKENS
+            max_tokens=DEFAULT_MAX_TOKENS,
         )
-        
+
         gpt_intent = response.choices[0].message.content.strip().lower()
         print(f"\n🤖 [DEBUG] GPT classification: {gpt_intent}")
-        
+
         # If GPT's classification has a high keyword score, use it
         if keyword_scores.get(gpt_intent, 0) > 0.3:
             return gpt_intent
-        
+
         # Otherwise, use the highest scoring intent from keyword analysis
         best_intent = max(keyword_scores.items(), key=lambda x: x[1])[0]
         print(f"\n📌 [DEBUG] Using keyword-based classification: {best_intent}")
         return best_intent
-        
+
     except Exception as e:
         print(f"\n⚠️ [WARN] GPT classification failed: {e}")
         # Fallback to keyword-based classification
         best_intent = max(keyword_scores.items(), key=lambda x: x[1])[0]
         print(f"\n📌 [DEBUG] Using keyword-based classification: {best_intent}")
         return best_intent
+
 
 def get_intent_category(intent: str) -> str:
     """
@@ -174,6 +247,7 @@ def get_intent_category(intent: str) -> str:
             return category
     return "other"
 
+
 def analyze_prompt_context(prompt: str) -> Dict[str, any]:
     """
     Analyze the context of a prompt to provide additional insights.
@@ -187,10 +261,10 @@ def analyze_prompt_context(prompt: str) -> Dict[str, any]:
     intent = classify_prompt_intent(prompt)
     category = get_intent_category(intent)
     keyword_scores = calculate_intent_scores(prompt)
-    
+
     return {
         "intent": intent,
         "category": category,
         "keyword_scores": keyword_scores,
-        "confidence": max(keyword_scores.values())
-    } 
+        "confidence": max(keyword_scores.values()),
+    }

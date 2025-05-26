@@ -1,11 +1,7 @@
 # === Prompt Template ===
-PROMPT_PREFIX = (
-    "It's very important that [main object or objective] isn't modified"
-)
+PROMPT_PREFIX = "It's very important that [main object or objective] isn't modified"
 
-PROMPT_SUFFIX = (
-    "and take all the time you needed as it is very important to achieve the best possible result"
-)
+PROMPT_SUFFIX = "and take all the time you needed as it is very important to achieve the best possible result"
 
 TEMPLATE_FORMAT = (
     "prefix [art medium] [main object or objective] [attribute] [expression] "
@@ -24,41 +20,88 @@ REQUIRED_ELEMENTS = [
     "attribute",
     "expression",
     "key light",
-    "detailing"
+    "detailing",
 ]
 
 # === Optional Prompt Enhancements ===
 OPTIONAL_ELEMENTS = [
-    "camera type",   # e.g., DSLR, top-view drone, 35mm film, anime-style, surveillance
+    "camera type",  # e.g., DSLR, top-view drone, 35mm film, anime-style, surveillance
     "camera angle",  # e.g., over-the-shoulder, bird's eye, wide shot, macro close-up
-    "artistic technique"  # e.g., chiaroscuro, impasto, pointillism, etc.
+    "artistic technique",  # e.g., chiaroscuro, impasto, pointillism, etc.
 ]
 
 # === Camera Settings ===
 CAMERA_TYPES = [
-    "DSLR", "mirrorless", "drone", "35mm film", "anime-style", 
-    "cinematic", "surveillance", "GoPro", "smartphone", "medium format",
-    "large format", "instant camera", "toy camera", "infrared", "thermal"
+    "DSLR",
+    "mirrorless",
+    "drone",
+    "35mm film",
+    "anime-style",
+    "cinematic",
+    "surveillance",
+    "GoPro",
+    "smartphone",
+    "medium format",
+    "large format",
+    "instant camera",
+    "toy camera",
+    "infrared",
+    "thermal",
 ]
 
 CAMERA_ANGLES = [
-    "over-the-shoulder", "low-angle", "bird's eye", "macro close-up",
-    "wide shot", "top-down", "first-person", "side profile", "dutch angle",
-    "aerial view", "worm's eye", "canted angle", "point-of-view", "establishing shot"
+    "over-the-shoulder",
+    "low-angle",
+    "bird's eye",
+    "macro close-up",
+    "wide shot",
+    "top-down",
+    "first-person",
+    "side profile",
+    "dutch angle",
+    "aerial view",
+    "worm's eye",
+    "canted angle",
+    "point-of-view",
+    "establishing shot",
 ]
 
 # === Artistic Techniques ===
 ARTISTIC_TECHNIQUES = [
-    "chiaroscuro", "impasto", "pointillism", "sfumato", "glazing",
-    "wet-on-wet", "dry brush", "scumbling", "underpainting", "alla prima",
-    "grisaille", "tenebrism", "cross-hatching", "stippling", "sgraffito"
+    "chiaroscuro",
+    "impasto",
+    "pointillism",
+    "sfumato",
+    "glazing",
+    "wet-on-wet",
+    "dry brush",
+    "scumbling",
+    "underpainting",
+    "alla prima",
+    "grisaille",
+    "tenebrism",
+    "cross-hatching",
+    "stippling",
+    "sgraffito",
 ]
 
 # === Art Mediums ===
 ART_MEDIUMS = [
-    "oil painting", "watercolor", "acrylic", "digital art", "photography",
-    "charcoal", "pastel", "ink", "mixed media", "gouache",
-    "tempera", "fresco", "encaustic", "collage", "etching"
+    "oil painting",
+    "watercolor",
+    "acrylic",
+    "digital art",
+    "photography",
+    "charcoal",
+    "pastel",
+    "ink",
+    "mixed media",
+    "gouache",
+    "tempera",
+    "fresco",
+    "encaustic",
+    "collage",
+    "etching",
 ]
 
 # === System Roles ===
@@ -78,7 +121,7 @@ PROMPT_SETTINGS = {
     "allow_custom_intents": True,
     "enable_artistic_techniques": True,
     "enable_dynamic_composition": True,
-    "enable_style_transfer": True
+    "enable_style_transfer": True,
 }
 
 # === Style and Caption Keys ===
@@ -122,5 +165,5 @@ INTENT_INSTRUCTIONS = {
     "experimental-style": (
         "Push creative boundaries with unique and innovative visual approaches. "
         "Combine different artistic techniques and mediums for novel effects."
-    )
-} 
+    ),
+}

@@ -9,7 +9,7 @@ from prompting.constants import (
     ARTISTIC_TECHNIQUES,
     ART_MEDIUMS,
     CAMERA_TYPES,
-    CAMERA_ANGLES
+    CAMERA_ANGLES,
 )
 
 # === Optional: Custom structured template overrides per intent ===
@@ -17,7 +17,7 @@ TEMPLATE_OVERRIDES: Dict[str, str] = {
     "experimental-style": "prefix [art medium] [scene] [visual tone] [expression] [composition] [artistic technique] suffix",
     "artistic-expression": "prefix [art medium] [subject] [style] [technique] [composition] [lighting] suffix",
     "product-ad": "prefix [art medium] [product] [setting] [mood] [lighting] [camera type] [camera angle] suffix",
-    "educational-content": "prefix [art medium] [subject] [style] [composition] [lighting] [technique] suffix"
+    "educational-content": "prefix [art medium] [subject] [style] [composition] [lighting] [technique] suffix",
 }
 
 # === Expandable intent-to-instruction mapping ===
@@ -66,8 +66,9 @@ INTENT_INSTRUCTIONS: Dict[str, str] = {
         "Push creative boundaries with unique and innovative visual approaches. "
         "Combine different artistic techniques and mediums for novel effects. "
         "Maintain visual coherence while exploring new possibilities."
-    )
+    ),
 }
+
 
 def get_intent_instruction(intent: str) -> str:
     """
@@ -83,8 +84,9 @@ def get_intent_instruction(intent: str) -> str:
         intent,
         f"Use your full understanding of visual storytelling to create prompts that suit this intent: '{intent}'. "
         f"Adapt the tone, framing, and technical language as needed — especially when a camera type or angle might improve realism. "
-        f"Consider the target audience and desired emotional impact when choosing artistic techniques and composition."
+        f"Consider the target audience and desired emotional impact when choosing artistic techniques and composition.",
     )
+
 
 def get_template_for_intent(intent: str) -> str:
     """
@@ -98,11 +100,8 @@ def get_template_for_intent(intent: str) -> str:
     """
     return TEMPLATE_OVERRIDES.get(intent, TEMPLATE_FORMAT)
 
-def build_system_message(
-    intent: str,
-    num_prompts: int,
-    style_hint: str = ""
-) -> str:
+
+def build_system_message(intent: str, num_prompts: int, style_hint: str = "") -> str:
     """
     Build the system message for GPT based on intent and style hints.
 
@@ -124,7 +123,8 @@ def build_system_message(
     style_clause = (
         f"The visual tone, lighting, and environment must align with this style: {style_hint}. "
         f"Only override if the user explicitly requests a different style."
-        if style_hint else ""
+        if style_hint
+        else ""
     )
 
     camera_instruction = (
@@ -179,4 +179,4 @@ Only return {num_prompts} complete prompts, one per line. Do not explain or anno
 
     print("\n📝 [DEBUG] Generated system message:")
     print(system_message)
-    return system_message 
+    return system_message

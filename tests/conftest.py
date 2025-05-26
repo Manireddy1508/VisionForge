@@ -1,9 +1,11 @@
 """
 Common test fixtures and configuration.
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock
+
 
 @pytest.fixture
 def mock_openai():
@@ -14,6 +16,7 @@ def mock_openai():
     )
     return mock
 
+
 @pytest.fixture
 def mock_milvus():
     """Mock Milvus connection and operations."""
@@ -22,18 +25,21 @@ def mock_milvus():
     mock.insert.return_value = [1]  # Mock inserted ID
     return mock
 
+
 @pytest.fixture
 def test_image():
     """Create a test image for testing."""
     from PIL import Image
-    img = Image.new('RGB', (100, 100), color='red')
+
+    img = Image.new("RGB", (100, 100), color="red")
     return img
+
 
 @pytest.fixture(autouse=True)
 def setup_test_env():
     """Set up test environment variables."""
-    os.environ['OPENAI_API_KEY'] = 'test-key'
-    os.environ['MILVUS_HOST'] = 'localhost'
-    os.environ['MILVUS_PORT'] = '19530'
-    os.environ['GOOGLE_CLOUD_PROJECT'] = 'test-project'
-    os.environ['GCS_BUCKET_NAME'] = 'test-bucket' 
+    os.environ["OPENAI_API_KEY"] = "test-key"
+    os.environ["MILVUS_HOST"] = "localhost"
+    os.environ["MILVUS_PORT"] = "19530"
+    os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
+    os.environ["GCS_BUCKET_NAME"] = "test-bucket"
