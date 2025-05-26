@@ -55,6 +55,10 @@ COOLDOWN_PERIOD = 2  # seconds between requests
 MAX_IMAGES = 5  # maximum number of images that can be generated at once
 MAX_INPUT_IMAGES = 4  # maximum number of input images for editing
 
+def health_check():
+    """Health check endpoint for Cloud Run."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
 def create_demo():
     """Create the Gradio demo interface."""
     with gr.Blocks() as demo:
@@ -241,4 +245,4 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 7860))
     demo = create_demo()
-    demo.launch(server_port=port, server_name="0.0.0.0") 
+    demo.launch(server_port=port, server_name="0.0.0.0", health_check=health_check) 
