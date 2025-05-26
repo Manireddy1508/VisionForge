@@ -14,9 +14,10 @@ jobs:
     env:
       PYTHONPATH: ${{ github.workspace }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_IMAGE_MODEL: ${{ secrets.OPENAI_IMAGE_MODEL }}
       MILVUS_HOST: ${{ secrets.MILVUS_HOST }}
       MILVUS_PORT: ${{ secrets.MILVUS_PORT }}
-      GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+      GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
       GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
 
     steps:
@@ -43,6 +44,30 @@ jobs:
         pip install pytest pytest-cov pytest-mock pytest-asyncio pytest-xdist
         pip install black flake8 mypy
         pip install codecov
+
+    - name: Verify environment variables
+      run: |
+        if [ -z "$OPENAI_API_KEY" ]; then
+          echo "Error: OPENAI_API_KEY is not set"
+          exit 1
+        fi
+        if [ -z "$OPENAI_IMAGE_MODEL" ]; then
+          echo "Error: OPENAI_IMAGE_MODEL is not set"
+          exit 1
+        fi
+        if [ -z "$MILVUS_HOST" ]; then
+          echo "Error: MILVUS_HOST is not set"
+          exit 1
+        fi
+        if [ -z "$GCP_PROJECT" ]; then
+          echo "Error: GCP_PROJECT is not set"
+          exit 1
+        fi
+        if [ -z "$GCS_BUCKET_NAME" ]; then
+          echo "Error: GCS_BUCKET_NAME is not set"
+          exit 1
+        fi
+        echo "All required environment variables are set"
 
     - name: Run linting
       run: |
