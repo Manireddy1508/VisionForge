@@ -40,6 +40,9 @@ logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not 
 logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
 logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
 
+# Debug log for CI/CD validation
+print("🔍 [CI/CD] Application initialized successfully")
+
 from image_generator import ImageGenerator
 from prompting.prompt_enhancer import PromptEnhancer
 
