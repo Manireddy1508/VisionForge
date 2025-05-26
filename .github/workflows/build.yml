@@ -33,27 +33,16 @@ jobs:
     - name: Configure Docker
       run: gcloud auth configure-docker ${{ env.GCR_HOSTNAME }}
 
-    - name: Build and Push Backend Image
+    - name: Build and Push Image
       run: |
-        docker build -t ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:${{ github.sha }} -f backend/Dockerfile .
-        docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:${{ github.sha }}
+        docker build -t ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:${{ github.sha }} -f Dockerfile .
+        docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:${{ github.sha }}
         # Tag as latest for main branch
         if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-          docker tag ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:${{ github.sha }} ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:latest
-          docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:latest
+          docker tag ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:${{ github.sha }} ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:latest
+          docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:latest
         fi
 
-    - name: Build and Push Generator Image
+    - name: Save Image Digest
       run: |
-        docker build -t ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:${{ github.sha }} -f generator/Dockerfile .
-        docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:${{ github.sha }}
-        # Tag as latest for main branch
-        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-          docker tag ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:${{ github.sha }} ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:latest
-          docker push ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:latest
-        fi
-
-    - name: Save Image Digests
-      run: |
-        echo "BACKEND_IMAGE=${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:${{ github.sha }}" >> $GITHUB_ENV
-        echo "GENERATOR_IMAGE=${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:${{ github.sha }}" >> $GITHUB_ENV 
+        echo "APP_IMAGE=${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:${{ github.sha }}" >> $GITHUB_ENV 

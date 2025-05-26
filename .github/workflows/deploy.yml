@@ -15,6 +15,10 @@ jobs:
       contents: read
       id-token: write
 
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+      GCR_HOSTNAME: gcr.io
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -28,25 +32,15 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Deploy Backend Service
+    - name: Deploy Application
       run: |
-        gcloud run deploy cloud-gen-backend \
-          --image ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-backend:${{ github.sha }} \
+        gcloud run deploy cloud-gen-app \
+          --image ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-app:${{ github.sha }} \
           --platform managed \
           --region us-central1 \
           --allow-unauthenticated \
-          --set-env-vars="OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},MILVUS_HOST=${{ secrets.MILVUS_HOST }},MILVUS_PORT=${{ secrets.MILVUS_PORT }},GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}"
+          --set-env-vars="OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},OPENAI_IMAGE_MODEL=${{ secrets.OPENAI_IMAGE_MODEL }},MILVUS_HOST=${{ secrets.MILVUS_HOST }},MILVUS_PORT=${{ secrets.MILVUS_PORT }},GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}"
 
-    - name: Deploy Generator Service
+    - name: Get Service URL
       run: |
-        gcloud run deploy cloud-gen-generator \
-          --image ${{ env.GCR_HOSTNAME }}/${{ env.PROJECT_ID }}/cloud-gen-generator:${{ github.sha }} \
-          --platform managed \
-          --region us-central1 \
-          --allow-unauthenticated \
-          --set-env-vars="OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},OPENAI_IMAGE_MODEL=${{ secrets.OPENAI_IMAGE_MODEL }},GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}"
-
-    - name: Get Service URLs
-      run: |
-        echo "Backend Service URL: $(gcloud run services describe cloud-gen-backend --platform managed --region us-central1 --format 'value(status.url)')" >> $GITHUB_STEP_SUMMARY
-        echo "Generator Service URL: $(gcloud run services describe cloud-gen-generator --platform managed --region us-central1 --format 'value(status.url)')" >> $GITHUB_STEP_SUMMARY 
+        echo "Application URL: $(gcloud run services describe cloud-gen-app --platform managed --region us-central1 --format 'value(status.url)')" >> $GITHUB_STEP_SUMMARY 
