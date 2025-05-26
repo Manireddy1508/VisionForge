@@ -30,8 +30,7 @@ RUN mkdir -p ${MODEL_CACHE_DIR} && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code and env file first to ensure proper loading
-COPY .env .env
+# Copy source code
 COPY . .
 
 # Set environment variables for production
