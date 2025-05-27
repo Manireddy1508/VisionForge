@@ -1,7 +1,8 @@
 import os
-import openai
 import ast
 from typing import List, Optional, Tuple
+
+import openai
 from PIL import Image
 from openai import OpenAI
 

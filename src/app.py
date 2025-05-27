@@ -1,11 +1,12 @@
 import os
-import gradio as gr
-from typing import List, Optional
-import random
 import time
 import logging
 from datetime import datetime
+from typing import List, Optional
+import gradio as gr
 from dotenv import load_dotenv
+from image_generator import ImageGenerator
+from prompting.prompt_enhancer import PromptEnhancer
 
 # Configure logging
 log_dir = os.path.join(os.getcwd(), "logs")
@@ -22,7 +23,9 @@ logger = logging.getLogger(__name__)
 # Debug logging for environment variables
 logger.info("🔍 Checking environment variables...")
 logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
+logger.info(
+    f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}"
+)
 logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
 logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
 logger.info(f"Log file: {log_file}")
@@ -33,15 +36,14 @@ load_dotenv()
 # Debug logging after loading .env
 logger.info("\n🔍 After loading .env file...")
 logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
+logger.info(
+    f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}"
+)
 logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
 logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
 
 # Debug log for CI/CD validation
 print("🔍 [CI/CD] Application initialized successfully")
-
-from image_generator import ImageGenerator
-from prompting.prompt_enhancer import PromptEnhancer
 
 # Initialize components
 image_generator = ImageGenerator()
@@ -106,7 +108,8 @@ def create_demo():
             logger.info(f"📌 Base prompt: {prompt}")
             logger.info(f"📌 Number of outputs requested: {num_outputs}")
             logger.info(
-                f"📌 Number of reference images: {len([img for img in imgs if img is not None])}"
+                f"📌 Number of reference images: "
+                f"{len([img for img in imgs if img is not None])}"
             )
 
             uploaded_images = [img for img in imgs if img is not None]
@@ -145,14 +148,14 @@ def create_demo():
 
         def generate_images_from_prompts(*args):
             logger.info("\n🎨 Starting image generation...")
-            # args: [prompt1, prompt2, ..., prompt5, num_outputs, seed, base_prompt, image1, image2, image3, image4]
+            # args: [prompt1, prompt2, ..., prompt5, num_outputs, seed, base_prompt,
+            # image1, image2, image3, image4]
             editable_prompt_count = MAX_IMAGES
-            image_input_count = MAX_INPUT_IMAGES
             prompt_args = args[:editable_prompt_count]
             num_outputs = int(args[editable_prompt_count])
             seed = args[editable_prompt_count + 1]
             base_prompt = args[editable_prompt_count + 2]
-            image_args = args[editable_prompt_count + 3 :]
+            image_args = args[editable_prompt_count + 3:]
             uploaded_images = [img for img in image_args if img is not None]
 
             logger.info(f"📌 Number of outputs requested: {num_outputs}")
@@ -164,7 +167,8 @@ def create_demo():
             if not selected_prompts:
                 if not base_prompt or not base_prompt.strip():
                     raise ValueError(
-                        "⚠️ No prompts available. Please enter a prompt or generate enhanced prompts."
+                        "⚠️ No prompts available. Please enter a prompt or "
+                        "generate enhanced prompts."
                     )
                 selected_prompts = [base_prompt.strip()] * num_outputs
             if len(selected_prompts) < num_outputs:
@@ -172,7 +176,8 @@ def create_demo():
                     selected_prompts = [selected_prompts[0]] * num_outputs
                 else:
                     raise ValueError(
-                        f"⚠️ You selected {num_outputs} outputs, but only provided {len(selected_prompts)} filled prompts."
+                        f"⚠️ You selected {num_outputs} outputs, but only provided "
+                        f"{len(selected_prompts)} filled prompts."
                     )
             selected_prompts = selected_prompts[:num_outputs]
             results = []
@@ -193,8 +198,8 @@ def create_demo():
                         edited_images = image_generator.edit_images(
                             images=uploaded_images,
                             prompt=final_prompt,
-                            enhanced_prompt=base_prompt,  # Original prompt is the enhanced one
-                            edited_prompt=final_prompt,  # Final prompt is the edited one
+                            enhanced_prompt=base_prompt,  # Original prompt is enhanced
+                            edited_prompt=final_prompt,  # Final prompt is edited
                             category="image_edit",
                         )
                         # Show only as many outputs as requested
@@ -209,8 +214,8 @@ def create_demo():
                             prompt=final_prompt,
                             num_images=1,
                             seed=seed_val,
-                            enhanced_prompt=base_prompt,  # Original prompt is the enhanced one
-                            edited_prompt=final_prompt,  # Final prompt is the edited one
+                            enhanced_prompt=base_prompt,  # Original prompt is enhanced
+                            edited_prompt=final_prompt,  # Final prompt is edited
                             category="text_to_image",
                         )
                         if not generation_results:
@@ -220,7 +225,7 @@ def create_demo():
                         results.append(final_prompt)
 
                     # Add cooldown between requests
-                    if i < len(selected_prompts) - 1:  # Don't wait after the last image
+                    if i < len(selected_prompts) - 1:  # Don't wait after last image
                         logger.info(
                             f"⏳ Waiting {COOLDOWN_PERIOD} seconds before next request..."
                         )
@@ -247,8 +252,6 @@ def create_demo():
             logger.info("✅ Image generation completed")
             # Clear cooldown status
             yield output + [""]
-
-            return output + [None]  # fallback, should not be reached
 
         confirm_btn.click(
             fn=generate_images_from_prompts,

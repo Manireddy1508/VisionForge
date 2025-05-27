@@ -1,11 +1,15 @@
 # === Prompt Template ===
 PROMPT_PREFIX = "It's very important that [main object or objective] isn't modified"
 
-PROMPT_SUFFIX = "and take all the time you needed as it is very important to achieve the best possible result"
+PROMPT_SUFFIX = (
+    "and take all the time you needed as it is very important to achieve the "
+    "best possible result"
+)
 
 TEMPLATE_FORMAT = (
     "prefix [art medium] [main object or objective] [attribute] [expression] "
-    "[key light] [detailing] [optional: camera type] [optional: camera angle] [optional: artistic technique] suffix"
+    "[key light] [detailing] [optional: camera type] [optional: camera angle] "
+    "[optional: artistic technique] suffix"
 )
 
 # === Basic Settings ===
@@ -131,36 +135,45 @@ CAPTION_KEY = "full_caption"
 # === Intent Instructions ===
 INTENT_INSTRUCTIONS = {
     "product-ad": (
-        "Think like a professional photographer. Focus on commercial visual storytelling that highlights the product's usage, "
-        "form, and emotional appeal. Include natural camera decisions (angle or type) when they enhance realism or brand perception."
+        "Think like a professional photographer. Focus on commercial visual "
+        "storytelling that highlights the product's usage, form, and emotional "
+        "appeal. Include natural camera decisions (angle or type) when they "
+        "enhance realism or brand perception."
     ),
     "service-promotion": (
-        "Imagine you're capturing the real-life moment a service is being used. Emphasize tone, setting, and clarity. "
-        "You may use cinematic framing or lifestyle-oriented composition where helpful."
+        "Imagine you're capturing the real-life moment a service is being used. "
+        "Emphasize tone, setting, and clarity. You may use cinematic framing or "
+        "lifestyle-oriented composition where helpful."
     ),
     "public-awareness": (
-        "Use symbolic or emotional imagery to visually communicate the importance of a cause or campaign. "
-        "Consider using artistic techniques that enhance the emotional impact."
+        "Use symbolic or emotional imagery to visually communicate the importance "
+        "of a cause or campaign. Consider using artistic techniques that enhance "
+        "the emotional impact."
     ),
     "brand-storytelling": (
-        "Craft lifestyle-driven prompts that reflect the brand's values. When appropriate, you may include a camera perspective "
-        "that emphasizes mood, composition, or the viewer's relationship to the scene."
+        "Craft lifestyle-driven prompts that reflect the brand's values. When "
+        "appropriate, you may include a camera perspective that emphasizes mood, "
+        "composition, or the viewer's relationship to the scene."
     ),
     "artistic-expression": (
-        "Focus on creative and artistic elements. Emphasize visual style, composition, and emotional impact. "
-        "Feel free to incorporate specific artistic techniques and mediums."
+        "Focus on creative and artistic elements. Emphasize visual style, "
+        "composition, and emotional impact. Feel free to incorporate specific "
+        "artistic techniques and mediums."
     ),
     "social-trend": (
-        "Create prompts that align with current social media trends and viral content styles. "
-        "Consider popular visual aesthetics and contemporary artistic movements."
+        "Create prompts that align with current social media trends and viral "
+        "content styles. Consider popular visual aesthetics and contemporary "
+        "artistic movements."
     ),
     "educational-content": (
-        "Design clear, informative visuals that effectively communicate educational concepts. "
-        "Use appropriate artistic techniques to enhance clarity and engagement."
+        "Design clear, informative visuals that effectively communicate "
+        "educational concepts. Use appropriate artistic techniques to enhance "
+        "clarity and engagement."
     ),
     "campaign-launch": (
-        "Create impactful, attention-grabbing prompts suitable for marketing campaign launches. "
-        "Incorporate dynamic composition and compelling visual elements."
+        "Create impactful, attention-grabbing prompts suitable for marketing "
+        "campaign launches. Incorporate dynamic composition and compelling "
+        "visual elements."
     ),
     "experimental-style": (
         "Push creative boundaries with unique and innovative visual approaches. "

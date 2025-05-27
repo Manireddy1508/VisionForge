@@ -1,9 +1,11 @@
 import os
 import re
-import torch
 from typing import List, Dict, Optional
-from PIL import Image
+
+import torch
 import openai
+from PIL import Image
+
 from .model_manager import get_model_manager
 
 # === Constants ===
@@ -128,9 +130,9 @@ class VisionDescriber:
             print(f"\n🎯 [DEBUG] Describing image with prompt: {prompt[:100]}...")
 
             # Process the image
-            inputs = self.processor(images=image, text=prompt, return_tensors="pt").to(
-                self.device
-            )
+            inputs = self.processor(
+                images=image, text=prompt, return_tensors="pt"
+            ).to(self.device)
 
             # Generate caption
             with torch.no_grad():

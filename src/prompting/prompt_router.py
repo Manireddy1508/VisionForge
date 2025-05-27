@@ -1,7 +1,8 @@
 import os
 import re
-import openai
 from typing import List, Optional, Dict, Tuple
+
+import openai
 
 # === OpenAI Client ===
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -47,7 +48,13 @@ INTENT_KEYWORDS = {
         "brand",
         "promotion",
     ],
-    "service-promotion": ["service", "offer", "promotion", "business", "professional"],
+    "service-promotion": [
+        "service",
+        "offer",
+        "promotion",
+        "business",
+        "professional",
+    ],
     "public-awareness": [
         "awareness",
         "campaign",
@@ -72,7 +79,14 @@ INTENT_KEYWORDS = {
         "style",
         "medium",
     ],
-    "social-trend": ["trend", "viral", "social", "media", "popular", "current"],
+    "social-trend": [
+        "trend",
+        "viral",
+        "social",
+        "media",
+        "popular",
+        "current",
+    ],
     "educational-content": [
         "education",
         "learn",

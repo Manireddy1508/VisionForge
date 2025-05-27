@@ -1,7 +1,8 @@
 import os
-import torch
 from pathlib import Path
 from typing import Optional, Dict
+
+import torch
 from huggingface_hub import hf_hub_download, HfFolder
 from transformers import AutoProcessor, AutoModelForVision2Seq
 
@@ -10,7 +11,9 @@ MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "/app/models")
 VISION_MODEL_NAME = os.getenv(
     "VISION_MODEL_NAME", "Salesforce/blip-image-captioning-base"
 )
-HF_TOKEN = os.getenv("HUGGING_FACE_TOKEN", "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")
+HF_TOKEN = os.getenv(
+    "HUGGING_FACE_TOKEN", "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"
+)
 
 
 class ModelManager:

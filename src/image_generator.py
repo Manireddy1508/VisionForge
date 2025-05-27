@@ -1,14 +1,16 @@
 import os
 import time
-from typing import List, Optional, Dict, Any
-from PIL import Image
+import base64
 import io
-from dotenv import load_dotenv
+import shutil
+import tempfile
+from typing import List, Optional, Dict, Any
+
 import openai
 import requests
-import base64
-import tempfile
-import shutil
+from PIL import Image
+from dotenv import load_dotenv
+
 from milvus_utils import insert_full_generation_record, _check_for_duplicate
 
 # Load environment variables
@@ -79,7 +81,9 @@ class ImageGenerator:
         print(f"📌 [DEBUG] Number of images: {num_images}")
 
         if not self.api_key:
-            raise ValueError("OPENAI_API_KEY is not set. Please check your .env file.")
+            raise ValueError(
+                "OPENAI_API_KEY is not set. Please check your .env file."
+            )
 
         openai.api_key = self.api_key
         results = []
@@ -95,7 +99,8 @@ class ImageGenerator:
                     b64_data = response.data[0].b64_json
                     if not b64_data:
                         raise ValueError(
-                            "No image data returned by OpenAI. Check your prompt and model access."
+                            "No image data returned by OpenAI. "
+                            "Check your prompt and model access."
                         )
                     image_bytes = base64.b64decode(b64_data)
                     pil_img = Image.open(io.BytesIO(image_bytes))
@@ -104,7 +109,8 @@ class ImageGenerator:
                     image_url = response.data[0].url
                     if not image_url:
                         raise ValueError(
-                            "No image URL returned by OpenAI. Check your prompt and model access."
+                            "No image URL returned by OpenAI. "
+                            "Check your prompt and model access."
                         )
                     image_response = requests.get(image_url)
                     pil_img = Image.open(io.BytesIO(image_response.content))
@@ -116,7 +122,8 @@ class ImageGenerator:
                 duplicate_id = _check_for_duplicate(prompt, temp_image_path)
                 if duplicate_id:
                     print(
-                        f"⚠️ [WARNING] Similar image already exists with ID: {duplicate_id}"
+                        f"⚠️ [WARNING] Similar image already exists with ID: "
+                        f"{duplicate_id}"
                     )
 
                 # Log to Milvus
@@ -157,19 +164,16 @@ class ImageGenerator:
         self,
         images: list,  # List of PIL Images
         prompt: str,
-        mask_images: list = None,  # Optional: list of PIL Images (same length as images)
+        mask_images: list = None,  # Optional: list of PIL Images
         size: str = "1024x1024",
         enhanced_prompt: Optional[str] = None,
         edited_prompt: Optional[str] = None,
         category: Optional[str] = None,
     ) -> list:
         """
-        Edit multiple images with a single prompt using gpt-image-1. Returns a list of PIL images.
+        Edit multiple images with a single prompt using gpt-image-1.
+        Returns a list of PIL images.
         """
-        import requests
-        import base64
-        import tempfile
-
         headers = {"Authorization": f"Bearer {self.api_key}"}
         files = {}
         temp_files = []
@@ -218,7 +222,8 @@ class ImageGenerator:
             duplicate_id = _check_for_duplicate(prompt, temp_image_path)
             if duplicate_id:
                 print(
-                    f"⚠️ [WARNING] Similar image already exists with ID: {duplicate_id}"
+                    f"⚠️ [WARNING] Similar image already exists with ID: "
+                    f"{duplicate_id}"
                 )
 
             # Log to Milvus
