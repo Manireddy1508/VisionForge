@@ -22,8 +22,8 @@ class ImageGenerator:
         """Initialize the image generator for OpenAI DALL·E 3 (gpt-image-1)."""
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.model_name = os.getenv(
-            "OPENAI_IMAGE_MODEL", "dall-e-3"
-        )  # or "gpt-image-1" if that's the endpoint name
+            "OPENAI_IMAGE_MODEL", "gpt-image-1"
+        )  # Default to gpt-image-1
         self.temp_dir = os.path.join(os.getcwd(), "temp_images")
         os.makedirs(self.temp_dir, exist_ok=True)
         print(

@@ -10,7 +10,7 @@ from unittest.mock import patch
 def test_image_generator_initialization():
     """Test ImageGenerator initialization."""
     generator = ImageGenerator()
-    assert generator.model_name == "dall-e-3"
+    assert generator.model_name == "gpt-image-1"
     assert generator.temp_dir is not None
 
 
