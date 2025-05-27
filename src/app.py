@@ -1,265 +1,218 @@
-import os
-import time
-import logging
-from datetime import datetime
-from typing import List, Optional
+from typing import Dict, Any
 import gradio as gr
-from dotenv import load_dotenv
-from image_generator import ImageGenerator
-from prompting.prompt_enhancer import PromptEnhancer
+from src.image_generator import ImageGenerator
+from src.prompting.model_manager import ModelManager
+from src.prompting.prompt_router import PromptRouter
+from src.prompting.prompt_enhancer import PromptEnhancer
+from src.prompting.prompt_editor import PromptEditor
+from src.prompting.prompt_templates import (
+    get_prompt_template,
+    get_negative_prompt_template,
+)
+from src.prompting.prompt_utils import (
+    extract_keywords,
+    combine_prompts,
+    format_prompt,
+)
+from src.prompting.constants import (
+    PROMPT_PREFIX,
+    PROMPT_SUFFIX,
+    NEGATIVE_PROMPT_PREFIX,
+    NEGATIVE_PROMPT_SUFFIX,
+)
+import os
+import json
+import logging
 
 # Configure logging
-log_dir = os.path.join(os.getcwd(), "logs")
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, f"app_{datetime.now().strftime('%Y%m%d')}.log")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Debug logging for environment variables
-logger.info("🔍 Checking environment variables...")
-logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
-logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
-logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
-logger.info(f"Log file: {log_file}")
-
-# Load environment variables
-load_dotenv()
-
-# Debug logging after loading .env
-logger.info("\n🔍 After loading .env file...")
-logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
-logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
-logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
-
-# Debug log for CI/CD validation
-print("🔍 [CI/CD] Application initialized successfully")
 
 # Initialize components
 image_generator = ImageGenerator()
+model_manager = ModelManager()
+prompt_router = PromptRouter()
 prompt_enhancer = PromptEnhancer()
+prompt_editor = PromptEditor()
 
-# Rate limiting settings
-COOLDOWN_PERIOD = 2  # seconds between requests
-MAX_IMAGES = 5  # maximum number of images that can be generated at once
-MAX_INPUT_IMAGES = 4  # maximum number of input images for editing
+# Load configuration
+with open("config.json", "r") as f:
+    config = json.load(f)
 
-
-def health_check():
-    """Health check endpoint for Cloud Run."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
-
-def create_demo():
-    """Create the Gradio demo interface."""
-    with gr.Blocks() as demo:
-        gr.Markdown("## AI Image Generation Playground")
-        with gr.Row():
-            with gr.Column():
-                prompt = gr.Textbox(
-                    label="Prompt",
-                    value="a beautiful sunset over mountains",
-                    placeholder="Enter your prompt here...",
-                )
-                with gr.Row():
-                    image_uploads = [
-                        gr.Image(label=f"Reference Image {i+1}", type="pil")
-                        for i in range(MAX_INPUT_IMAGES)
-                    ]
-                with gr.Row():
-                    gr.Markdown(
-                        "Image size is fixed at 1024x1024 for highest quality output."
-                    )
-                with gr.Row():
-                    num_outputs = gr.Slider(
-                        1, MAX_IMAGES, 1, step=1, label="Number of Outputs"
-                    )
-                    seed = gr.Number(-1, label="Seed (-1 = Random)")
-                with gr.Row():
-                    generate_btn = gr.Button("🎯 Generate Enhanced Prompts")
-                    regenerate_btn = gr.Button("🔁 Regenerate")
-                    confirm_btn = gr.Button("✅ Confirm & Generate Images")
-                cooldown_status = gr.Markdown("")
-            with gr.Column():
-                editable_prompts = []
-                outputs = []
-                for i in range(MAX_IMAGES):  # Maximum number of outputs
-                    editable = gr.Textbox(label=f"Prompt {i+1}", lines=3)
-                    image_out = gr.Image(label=f"Image {i+1}")
-                    editable_prompts.append(editable)
-                    outputs.append(image_out)
-                    outputs.append(editable)
-
-        def generate_prompts(*args):
-            logger.info("\n🎯 Starting prompt generation...")
-            prompt = args[0]
-            imgs = args[1:-1]
-            num_outputs = args[-1]
-            logger.info(f"📌 Base prompt: {prompt}")
-            logger.info(f"📌 Number of outputs requested: {num_outputs}")
-            logger.info(
-                f"📌 Number of reference images: "
-                f"{len([img for img in imgs if img is not None])}"
+# Initialize UI components
+with gr.Blocks(title="AI Image Generator") as demo:
+    gr.Markdown("# AI Image Generator")
+    
+    with gr.Row():
+        with gr.Column():
+            # Input components
+            prompt = gr.Textbox(
+                label="Enter your prompt",
+                placeholder="Describe the image you want to generate...",
+                lines=3,
             )
-
-            uploaded_images = [img for img in imgs if img is not None]
-            style_hint = None
-            try:
-                enhanced_prompts = prompt_enhancer.enhance_prompt(
-                    prompt=prompt,
-                    num_variations=num_outputs,
-                    style_hint=style_hint,
-                    reference_images=uploaded_images,
+            
+            negative_prompt = gr.Textbox(
+                label="Negative prompt (optional)",
+                placeholder="Describe what you don't want in the image...",
+                lines=2,
+            )
+            
+            with gr.Row():
+                num_images = gr.Slider(
+                    minimum=1,
+                    maximum=4,
+                    value=1,
+                    step=1,
+                    label="Number of images",
                 )
-                logger.info(
-                    f"✅ Successfully generated {len(enhanced_prompts)} enhanced prompts"
+                
+                guidance_scale = gr.Slider(
+                    minimum=1.0,
+                    maximum=20.0,
+                    value=7.5,
+                    step=0.1,
+                    label="Guidance scale",
                 )
-                return enhanced_prompts + [""] * (MAX_IMAGES - len(enhanced_prompts))
-            except Exception as e:
-                logger.error(f"❌ Failed to generate prompts: {str(e)}")
-                raise
+            
+            with gr.Row():
+                width = gr.Slider(
+                    minimum=256,
+                    maximum=1024,
+                    value=512,
+                    step=64,
+                    label="Width",
+                )
+                
+                height = gr.Slider(
+                    minimum=256,
+                    maximum=1024,
+                    value=512,
+                    step=64,
+                    label="Height",
+                )
+            
+            # Advanced options
+            with gr.Accordion("Advanced Options", open=False):
+                num_inference_steps = gr.Slider(
+                    minimum=1,
+                    maximum=100,
+                    value=50,
+                    step=1,
+                    label="Inference steps",
+                )
+                
+                seed = gr.Number(
+                    value=-1,
+                    label="Seed (-1 for random)",
+                )
+                
+                scheduler = gr.Dropdown(
+                    choices=["DDIM", "DPMSolverMultistep", "EulerAncestralDiscrete"],
+                    value="DPMSolverMultistep",
+                    label="Scheduler",
+                )
+            
+            # Generate button
+            generate_btn = gr.Button("Generate Images", variant="primary")
+        
+        with gr.Column():
+            # Output components
+            gallery = gr.Gallery(
+                label="Generated Images",
+                show_label=True,
+                elem_id="gallery",
+                columns=2,
+                rows=2,
+                object_fit="contain",
+            )
+            
+            # Image details
+            with gr.Accordion("Image Details", open=False):
+                image_info = gr.JSON(label="Generation Parameters")
+    
+    # Event handlers
+    def generate_images(
+        prompt: str,
+        negative_prompt: str,
+        num_images: int,
+        guidance_scale: float,
+        width: int,
+        height: int,
+        num_inference_steps: int,
+        seed: int,
+        scheduler: str,
+    ) -> tuple[list, dict]:
+        try:
+            # Process prompt
+            enhanced_prompt = prompt_enhancer.enhance_prompt(prompt)
+            edited_prompt = prompt_editor.edit_prompt(enhanced_prompt)
+            final_prompt = prompt_router.route_prompt(edited_prompt)
+            
+            # Process negative prompt
+            if negative_prompt:
+                enhanced_neg = prompt_enhancer.enhance_prompt(negative_prompt)
+                edited_neg = prompt_editor.edit_prompt(enhanced_neg)
+                final_neg = prompt_router.route_prompt(edited_neg)
+            else:
+                final_neg = ""
+            
+            # Generate images
+            images = []
+            for _ in range(num_images):
+                image = image_generator.generate_image(
+                    prompt=final_prompt,
+                    negative_prompt=final_neg,
+                    guidance_scale=guidance_scale,
+                    width=width,
+                    height=height,
+                    num_inference_steps=num_inference_steps,
+                    seed=seed,
+                    scheduler=scheduler,
+                )
+                images.append(image)
+            
+            # Prepare image info
+            info = {
+                "prompt": final_prompt,
+                "negative_prompt": final_neg,
+                "parameters": {
+                    "guidance_scale": guidance_scale,
+                    "width": width,
+                    "height": height,
+                    "num_inference_steps": num_inference_steps,
+                    "seed": seed,
+                    "scheduler": scheduler,
+                },
+            }
+            
+            return images, info
+            
+        except Exception as e:
+            logger.error(f"Error generating images: {str(e)}")
+            raise gr.Error(f"Failed to generate images: {str(e)}")
+    
+    # Set up event handlers
+    generate_btn.click(
+        fn=generate_images,
+        inputs=[
+            prompt,
+            negative_prompt,
+            num_images,
+            guidance_scale,
+            width,
+            height,
+            num_inference_steps,
+            seed,
+            scheduler,
+        ],
+        outputs=[gallery, image_info],
+    )
 
-        def update_cooldown_status():
-            return "⏳ Please wait between requests to avoid rate limits..."
-
-        def clear_cooldown_status():
-            return ""
-
-        generate_btn.click(
-            fn=generate_prompts,
-            inputs=[prompt, *image_uploads, num_outputs],
-            outputs=editable_prompts,
-        )
-        regenerate_btn.click(
-            fn=generate_prompts,
-            inputs=[prompt, *image_uploads, num_outputs],
-            outputs=editable_prompts,
-        )
-
-        def generate_images_from_prompts(*args):
-            logger.info("\n🎨 Starting image generation...")
-            # args: [prompt1, prompt2, ..., prompt5, num_outputs, seed, base_prompt,
-            # image1, image2, image3, image4]
-            editable_prompt_count = MAX_IMAGES
-            prompt_args = args[:editable_prompt_count]
-            num_outputs = int(args[editable_prompt_count])
-            seed = args[editable_prompt_count + 1]
-            base_prompt = args[editable_prompt_count + 2]
-            image_args = args[editable_prompt_count + 3 :]
-            uploaded_images = [img for img in image_args if img is not None]
-
-            logger.info(f"📌 Number of outputs requested: {num_outputs}")
-            logger.info(f"📌 Seed value: {seed}")
-            logger.info(f"📌 Base prompt: {base_prompt}")
-            logger.info(f"📌 Number of reference images: {len(uploaded_images)}")
-
-            selected_prompts = [p.strip() for p in prompt_args if p.strip()]
-            if not selected_prompts:
-                if not base_prompt or not base_prompt.strip():
-                    raise ValueError(
-                        "⚠️ No prompts available. Please enter a prompt or "
-                        "generate enhanced prompts."
-                    )
-                selected_prompts = [base_prompt.strip()] * num_outputs
-            if len(selected_prompts) < num_outputs:
-                if len(selected_prompts) == 1:
-                    selected_prompts = [selected_prompts[0]] * num_outputs
-                else:
-                    raise ValueError(
-                        f"⚠️ You selected {num_outputs} outputs, but only provided "
-                        f"{len(selected_prompts)} filled prompts."
-                    )
-            selected_prompts = selected_prompts[:num_outputs]
-            results = []
-
-            # Show cooldown status (pad with None for images/prompts)
-            yield [None] * (MAX_IMAGES * 2) + [
-                "⏳ Please wait between requests to avoid rate limits..."
-            ]
-
-            for i, final_prompt in enumerate(selected_prompts):
-                try:
-                    logger.info(f"\n🖼️ Generating image {i+1}/{len(selected_prompts)}")
-                    logger.info(f"📌 Using prompt: {final_prompt}")
-
-                    # If images are uploaded, use edit_images
-                    if uploaded_images:
-                        logger.info("📌 Using image editing mode")
-                        edited_images = image_generator.edit_images(
-                            images=uploaded_images,
-                            prompt=final_prompt,
-                            enhanced_prompt=base_prompt,  # Original prompt is enhanced
-                            edited_prompt=final_prompt,  # Final prompt is edited
-                            category="image_edit",
-                        )
-                        # Show only as many outputs as requested
-                        for img_data in edited_images[:num_outputs]:
-                            results.append(img_data["image"])
-                            results.append(img_data["prompt"])
-                    else:
-                        logger.info("📌 Using text-to-image mode")
-                        # Fallback to text-to-image if no images uploaded
-                        seed_val = int(seed) if seed != -1 else None
-                        generation_results = image_generator.generate_images(
-                            prompt=final_prompt,
-                            num_images=1,
-                            seed=seed_val,
-                            enhanced_prompt=base_prompt,  # Original prompt is enhanced
-                            edited_prompt=final_prompt,  # Final prompt is edited
-                            category="text_to_image",
-                        )
-                        if not generation_results:
-                            raise ValueError("No images were generated")
-                        result = generation_results[0]
-                        results.append(result["image"])
-                        results.append(final_prompt)
-
-                    # Add cooldown between requests
-                    if i < len(selected_prompts) - 1:  # Don't wait after last image
-                        logger.info(
-                            f"⏳ Waiting {COOLDOWN_PERIOD} seconds before next request..."
-                        )
-                        time.sleep(COOLDOWN_PERIOD)
-
-                except Exception as e:
-                    logger.error(f"❌ Failed to generate image {i+1}: {str(e)}")
-                    results.append(None)
-                    results.append(f"⚠️ Error: {e}")
-
-            # Pad results to always have MAX_IMAGES * 2 items (image, prompt pairs)
-            while len(results) < MAX_IMAGES * 2:
-                results.append(None)
-
-            # Only return as many outputs as user requested, rest are None
-            output = []
-            for i in range(MAX_IMAGES):
-                if i < num_outputs:
-                    output.append(results[i * 2])  # image
-                    output.append(results[i * 2 + 1])  # prompt
-                else:
-                    output.extend([None, None])
-
-            logger.info("✅ Image generation completed")
-            # Clear cooldown status
-            yield output + [""]
-
-        confirm_btn.click(
-            fn=generate_images_from_prompts,
-            inputs=[*editable_prompts, num_outputs, seed, prompt, *image_uploads],
-            outputs=outputs + [cooldown_status],
-        )
-    return demo
-
-
+# Launch the app
 if __name__ == "__main__":
-    import os
-
-    port = int(os.environ.get("PORT", 7860))
-    demo = create_demo()
-    demo.launch(server_port=port, server_name="0.0.0.0", health_check=health_check)
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.getenv("PORT", 7860)),
+        share=True,
+    )
