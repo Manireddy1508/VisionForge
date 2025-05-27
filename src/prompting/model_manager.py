@@ -11,9 +11,7 @@ MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "/app/models")
 VISION_MODEL_NAME = os.getenv(
     "VISION_MODEL_NAME", "Salesforce/blip-image-captioning-base"
 )
-HF_TOKEN = os.getenv(
-    "HUGGING_FACE_TOKEN", "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"
-)
+HF_TOKEN = os.getenv("HUGGING_FACE_TOKEN", "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")
 
 
 class ModelManager:

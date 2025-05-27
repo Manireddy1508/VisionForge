@@ -81,9 +81,7 @@ class ImageGenerator:
         print(f"📌 [DEBUG] Number of images: {num_images}")
 
         if not self.api_key:
-            raise ValueError(
-                "OPENAI_API_KEY is not set. Please check your .env file."
-            )
+            raise ValueError("OPENAI_API_KEY is not set. Please check your .env file.")
 
         openai.api_key = self.api_key
         results = []

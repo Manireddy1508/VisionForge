@@ -23,9 +23,7 @@ logger = logging.getLogger(__name__)
 # Debug logging for environment variables
 logger.info("🔍 Checking environment variables...")
 logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(
-    f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}"
-)
+logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
 logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
 logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
 logger.info(f"Log file: {log_file}")
@@ -36,9 +34,7 @@ load_dotenv()
 # Debug logging after loading .env
 logger.info("\n🔍 After loading .env file...")
 logger.info(f"OPENAI_IMAGE_MODEL={os.getenv('OPENAI_IMAGE_MODEL')}")
-logger.info(
-    f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}"
-)
+logger.info(f"OPENAI_API_KEY={'*' * 10 if os.getenv('OPENAI_API_KEY') else 'Not set'}")
 logger.info(f"GOOGLE_CLOUD_PROJECT={os.getenv('GOOGLE_CLOUD_PROJECT')}")
 logger.info(f"GCS_BUCKET_NAME={os.getenv('GCS_BUCKET_NAME')}")
 
@@ -155,7 +151,7 @@ def create_demo():
             num_outputs = int(args[editable_prompt_count])
             seed = args[editable_prompt_count + 1]
             base_prompt = args[editable_prompt_count + 2]
-            image_args = args[editable_prompt_count + 3:]
+            image_args = args[editable_prompt_count + 3 :]
             uploaded_images = [img for img in image_args if img is not None]
 
             logger.info(f"📌 Number of outputs requested: {num_outputs}")
