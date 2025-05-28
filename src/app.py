@@ -28,6 +28,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Get port from environment variable or use default
+port = int(os.getenv("PORT", 8080))
+
 # Initialize components
 image_generator = ImageGenerator()
 model_manager = ModelManager()
@@ -211,8 +214,4 @@ with gr.Blocks(title="AI Image Generator") as demo:
 
 # Launch the app
 if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=int(os.getenv("PORT", 7860)),
-        share=True,
-    )
+    demo.launch(server_name="0.0.0.0", server_port=port)

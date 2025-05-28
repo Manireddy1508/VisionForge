@@ -38,6 +38,14 @@ jobs:
       - name: Authorize Docker push
         run: gcloud auth configure-docker
 
+      - name: Set IAM Policy
+        run: |
+          gcloud beta run services add-iam-policy-binding \
+            --region=${{ env.REGION }} \
+            --member=allUsers \
+            --role=roles/run.invoker \
+            ${{ env.SERVICE_NAME }} || true
+
       - name: Build and Push Container
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
