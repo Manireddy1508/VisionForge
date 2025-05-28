@@ -21,9 +21,10 @@ COPY . .
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PORT=8080
+ENV PYTHONUNBUFFERED=1
 
 # Expose the port
 EXPOSE 8080
 
-# Run the application
-CMD ["python", "src/app.py"] 
+# Run the application with debugging
+CMD ["python", "-u", "src/app.py"] 

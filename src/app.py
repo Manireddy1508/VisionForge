@@ -30,17 +30,36 @@ logger = logging.getLogger(__name__)
 
 # Get port from environment variable or use default
 port = int(os.getenv("PORT", 8080))
+logger.info(f"Starting application on port {port}")
 
 # Initialize components
-image_generator = ImageGenerator()
-model_manager = ModelManager()
-prompt_router = PromptRouter()
-prompt_enhancer = PromptEnhancer()
-prompt_editor = PromptEditor()
+try:
+    image_generator = ImageGenerator()
+    model_manager = ModelManager()
+    prompt_router = PromptRouter()
+    prompt_enhancer = PromptEnhancer()
+    prompt_editor = PromptEditor()
+    logger.info("Successfully initialized all components")
+except Exception as e:
+    logger.error(f"Failed to initialize components: {str(e)}")
+    raise
 
 # Load configuration
-with open("config.json", "r") as f:
-    config = json.load(f)
+try:
+    with open("config.json", "r") as f:
+        config = json.load(f)
+    logger.info("Successfully loaded config.json")
+except FileNotFoundError:
+    logger.warning("config.json not found, using default configuration")
+    config = {
+        "default_model": "dall-e-3",
+        "default_size": "1024x1024",
+        "quality": "standard",
+        "style": "natural"
+    }
+except Exception as e:
+    logger.error(f"Failed to load config.json: {str(e)}")
+    raise
 
 # Initialize UI components
 with gr.Blocks(title="AI Image Generator") as demo:
@@ -214,4 +233,14 @@ with gr.Blocks(title="AI Image Generator") as demo:
 
 # Launch the app
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=port)
+    try:
+        logger.info("Starting Gradio interface")
+        demo.launch(
+            server_name="0.0.0.0",
+            server_port=port,
+            show_error=True,
+            debug=True
+        )
+    except Exception as e:
+        logger.error(f"Failed to start Gradio interface: {str(e)}")
+        raise
