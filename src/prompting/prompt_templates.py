@@ -281,3 +281,74 @@ Prompt constraints:
 - Avoid specific color terms unless inferred from reference images
 - Do not include examples or wrap prompts in quotes
 """.strip()
+
+
+def get_negative_prompt_template(
+    intent: str,
+    style_hint: Optional[str] = None,
+    reference_images: Optional[List] = None
+) -> str:
+    """
+    Get a template for generating negative prompts based on intent and context.
+    
+    Args:
+        intent (str): The intent label
+        style_hint (str, optional): Optional style hint from reference images
+        reference_images (List, optional): List of reference images
+        
+    Returns:
+        str: The negative prompt template
+    """
+    try:
+        # Get intent-specific instruction
+        instruction = get_intent_instruction(intent)
+        
+        # Build the system message
+        system_message = f"""
+You are a negative prompt generation assistant for Flux Pro.
+
+Your task is to generate a negative prompt that helps avoid unwanted elements in the generated image.
+
+Consider the following:
+- Intent: {intent}
+- Style Hint: {style_hint if style_hint else 'None'}
+- Reference Images: {len(reference_images) if reference_images else 0}
+
+Instructions:
+{instruction}
+
+Negative prompt constraints:
+- Must be concise and specific
+- Focus on elements to avoid
+- Consider the intent and style
+- Avoid redundant or contradictory elements
+- Do not include positive elements
+
+Example format:
+"avoid [element1], [element2], [element3]"
+
+Only return the negative prompt. Do not include explanations or examples.
+""".strip()
+        
+        return system_message
+        
+    except Exception as e:
+        print(f"Error generating negative prompt template: {str(e)}")
+        # Return a basic template as fallback
+        return """
+You are a negative prompt generation assistant for Flux Pro.
+
+Your task is to generate a negative prompt that helps avoid unwanted elements in the generated image.
+
+Negative prompt constraints:
+- Must be concise and specific
+- Focus on elements to avoid
+- Consider the intent and style
+- Avoid redundant or contradictory elements
+- Do not include positive elements
+
+Example format:
+"avoid [element1], [element2], [element3]"
+
+Only return the negative prompt. Do not include explanations or examples.
+""".strip()
