@@ -23,6 +23,10 @@ from src.prompting.constants import (
 import os
 import json
 import logging
+import sys
+
+# Add the project root to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Configure logging
 logging.basicConfig(
@@ -34,6 +38,7 @@ logger = logging.getLogger(__name__)
 # Get port from environment variable or use default
 port = int(os.getenv("PORT", 8080))
 logger.info(f"Starting application on port {port}")
+logger.info(f"Python path: {sys.path}")
 
 # Initialize components
 try:

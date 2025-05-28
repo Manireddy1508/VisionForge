@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Any
 
 import openai
 
@@ -9,8 +9,8 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # === Constants ===
 DEFAULT_MODEL = "gpt-4"
-DEFAULT_MAX_TOKENS = 10
-DEFAULT_TEMPERATURE = 0.0
+DEFAULT_MAX_TOKENS = 50  # Increased for better responses
+DEFAULT_TEMPERATURE = 0.3  # Slightly increased for more variety
 
 # === Intent Vocabulary ===
 INTENT_LABELS = [
@@ -262,7 +262,7 @@ def get_intent_category(intent: str) -> str:
     return "other"
 
 
-def analyze_prompt_context(prompt: str) -> Dict[str, any]:
+def analyze_prompt_context(prompt: str) -> Dict[str, Any]:
     """
     Analyze the context of a prompt to provide additional insights.
 
@@ -270,18 +270,27 @@ def analyze_prompt_context(prompt: str) -> Dict[str, any]:
         prompt (str): The input prompt
 
     Returns:
-        Dict[str, any]: Dictionary containing context analysis
+        Dict[str, Any]: Dictionary containing context analysis
     """
-    intent = classify_prompt_intent(prompt)
-    category = get_intent_category(intent)
-    keyword_scores = calculate_intent_scores(prompt)
+    try:
+        intent = classify_prompt_intent(prompt)
+        category = get_intent_category(intent)
+        keyword_scores = calculate_intent_scores(prompt)
 
-    return {
-        "intent": intent,
-        "category": category,
-        "keyword_scores": keyword_scores,
-        "confidence": max(keyword_scores.values()),
-    }
+        return {
+            "intent": intent,
+            "category": category,
+            "keyword_scores": keyword_scores,
+            "confidence": max(keyword_scores.values()),
+        }
+    except Exception as e:
+        print(f"Error analyzing prompt context: {str(e)}")
+        return {
+            "intent": "unknown",
+            "category": "other",
+            "keyword_scores": {},
+            "confidence": 0.0,
+        }
 
 
 class PromptRouter:
@@ -307,11 +316,8 @@ class PromptRouter:
             # Analyze prompt context
             context = analyze_prompt_context(prompt)
             
-            # Classify intent
-            intent = classify_prompt_intent(prompt)
-            
             # Get intent category
-            category = get_intent_category(intent)
+            category = context.get("category", "other")
             
             # Apply category-specific processing
             if category == "commercial":
@@ -329,22 +335,38 @@ class PromptRouter:
             print(f"Error routing prompt: {str(e)}")
             return prompt
     
-    def _process_commercial_prompt(self, prompt: str, context: Dict) -> str:
+    def _process_commercial_prompt(self, prompt: str, context: Dict[str, Any]) -> str:
         """Process commercial prompts."""
-        # Add commercial-specific enhancements
-        return f"{prompt}, professional commercial photography, high-end product visualization"
+        try:
+            # Add commercial-specific enhancements
+            return f"{prompt}, professional commercial photography, high-end product visualization"
+        except Exception as e:
+            print(f"Error processing commercial prompt: {str(e)}")
+            return prompt
     
-    def _process_artistic_prompt(self, prompt: str, context: Dict) -> str:
+    def _process_artistic_prompt(self, prompt: str, context: Dict[str, Any]) -> str:
         """Process artistic prompts."""
-        # Add artistic-specific enhancements
-        return f"{prompt}, artistic composition, creative expression"
+        try:
+            # Add artistic-specific enhancements
+            return f"{prompt}, artistic composition, creative expression"
+        except Exception as e:
+            print(f"Error processing artistic prompt: {str(e)}")
+            return prompt
     
-    def _process_social_prompt(self, prompt: str, context: Dict) -> str:
+    def _process_social_prompt(self, prompt: str, context: Dict[str, Any]) -> str:
         """Process social prompts."""
-        # Add social-specific enhancements
-        return f"{prompt}, social media optimized, engaging composition"
+        try:
+            # Add social-specific enhancements
+            return f"{prompt}, social media optimized, engaging composition"
+        except Exception as e:
+            print(f"Error processing social prompt: {str(e)}")
+            return prompt
     
-    def _process_educational_prompt(self, prompt: str, context: Dict) -> str:
+    def _process_educational_prompt(self, prompt: str, context: Dict[str, Any]) -> str:
         """Process educational prompts."""
-        # Add educational-specific enhancements
-        return f"{prompt}, clear educational visualization, informative composition"
+        try:
+            # Add educational-specific enhancements
+            return f"{prompt}, clear educational visualization, informative composition"
+        except Exception as e:
+            print(f"Error processing educational prompt: {str(e)}")
+            return prompt
