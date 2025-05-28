@@ -25,7 +25,10 @@ import json
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Get port from environment variable or use default
@@ -34,6 +37,7 @@ logger.info(f"Starting application on port {port}")
 
 # Initialize components
 try:
+    logger.info("Initializing components...")
     image_generator = ImageGenerator()
     model_manager = ModelManager()
     prompt_router = PromptRouter()
@@ -63,6 +67,12 @@ except Exception as e:
 
 # Initialize UI components
 with gr.Blocks(title="AI Image Generator") as demo:
+    # Add health check endpoint
+    @demo.load()
+    def health_check():
+        logger.info("Health check endpoint called")
+        return "OK"
+
     gr.Markdown("# AI Image Generator")
     
     with gr.Row():
@@ -235,11 +245,14 @@ with gr.Blocks(title="AI Image Generator") as demo:
 if __name__ == "__main__":
     try:
         logger.info("Starting Gradio interface")
+        demo.queue()  # Enable queuing for better performance
         demo.launch(
             server_name="0.0.0.0",
             server_port=port,
             show_error=True,
-            debug=True
+            debug=True,
+            share=False,
+            quiet=False
         )
     except Exception as e:
         logger.error(f"Failed to start Gradio interface: {str(e)}")
