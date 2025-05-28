@@ -6,6 +6,11 @@ PROMPT_SUFFIX = (
     "best possible result"
 )
 
+# === Negative Prompt Template ===
+NEGATIVE_PROMPT_PREFIX = "Avoid including"
+
+NEGATIVE_PROMPT_SUFFIX = "in the generated image"
+
 TEMPLATE_FORMAT = (
     "prefix [art medium] [main object or objective] [attribute] [expression] "
     "[key light] [detailing] [optional: camera type] [optional: camera angle] "
