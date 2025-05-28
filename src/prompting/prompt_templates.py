@@ -210,3 +210,74 @@ Only return {num_prompts} complete prompts, one per line. Do not explain or anno
     print("\n📝 [DEBUG] Generated system message:")
     print(system_message)
     return system_message
+
+
+def get_prompt_template(
+    intent: str,
+    num_prompts: int = 1,
+    style_hint: Optional[str] = None,
+    reference_images: Optional[List] = None
+) -> str:
+    """
+    Get a complete prompt template based on intent and context.
+    
+    Args:
+        intent (str): The intent label
+        num_prompts (int): Number of prompts to generate
+        style_hint (str, optional): Optional style hint from reference images
+        reference_images (List, optional): List of reference images
+        
+    Returns:
+        str: The complete prompt template
+    """
+    try:
+        # Get the base template format
+        template_format = get_template_for_intent(intent)
+        
+        # Get the intent-specific instruction
+        instruction = get_intent_instruction(intent)
+        
+        # Build the system message
+        system_message = build_system_message(
+            intent=intent,
+            num_prompts=num_prompts,
+            style_hint=style_hint or ""
+        )
+        
+        # Combine everything into a complete template
+        template = f"""
+{system_message}
+
+Template Format:
+{template_format}
+
+Instructions:
+{instruction}
+
+Reference Images: {len(reference_images) if reference_images else 0}
+Style Hint: {style_hint if style_hint else 'None'}
+"""
+        return template.strip()
+        
+    except Exception as e:
+        print(f"Error generating prompt template: {str(e)}")
+        # Return a basic template as fallback
+        return f"""
+You are a prompt enhancement assistant for Flux Pro.
+
+Your task is to transform a short user input into {num_prompts} fully structured, highly descriptive prompts suitable for AI image generation.
+
+Each prompt must follow this format:
+{TEMPLATE_FORMAT}
+
+Prefix: "{PROMPT_PREFIX}"
+Suffix: "{PROMPT_SUFFIX}"
+
+Prompt constraints:
+- Must be under {MAX_PROMPT_LENGTH} words
+- Must include all of: {", ".join(REQUIRED_ELEMENTS)}
+- Optional when helpful: {", ".join(OPTIONAL_ELEMENTS)}
+- Must be a single sentence (no bullet points, no numbering)
+- Avoid specific color terms unless inferred from reference images
+- Do not include examples or wrap prompts in quotes
+""".strip()
