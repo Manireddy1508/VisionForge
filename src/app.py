@@ -38,6 +38,18 @@ logger.info(f"Starting application on port {port}")
 # Initialize components
 try:
     logger.info("Initializing components...")
+    
+    # Initialize Milvus connection
+    try:
+        from src.milvus_utils import connect_to_milvus, create_collection
+        connect_to_milvus()
+        create_collection()
+        logger.info("Successfully connected to Milvus")
+    except Exception as e:
+        logger.warning(f"Failed to connect to Milvus: {str(e)}")
+        logger.warning("Continuing without Milvus functionality")
+    
+    # Initialize other components
     image_generator = ImageGenerator()
     model_manager = ModelManager()
     prompt_router = PromptRouter()

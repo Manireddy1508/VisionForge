@@ -64,11 +64,15 @@ jobs:
             --set-env-vars="PYTHONUNBUFFERED=1" \
             --set-env-vars="GRADIO_SERVER_NAME=0.0.0.0" \
             --set-env-vars="GRADIO_SERVER_PORT=8080" \
-            --timeout=300s \
-            --cpu=1 \
-            --memory=2Gi \
+            --set-env-vars="MILVUS_HOST=${{ secrets.MILVUS_HOST }}" \
+            --set-env-vars="MILVUS_PORT=${{ secrets.MILVUS_PORT }}" \
+            --timeout=600s \
+            --cpu=2 \
+            --memory=4Gi \
             --min-instances=0 \
-            --max-instances=10
+            --max-instances=10 \
+            --port=8080 \
+            --use-http2
 
       - name: Get Service URL
         run: |
