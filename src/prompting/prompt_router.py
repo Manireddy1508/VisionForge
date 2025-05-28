@@ -282,3 +282,69 @@ def analyze_prompt_context(prompt: str) -> Dict[str, any]:
         "keyword_scores": keyword_scores,
         "confidence": max(keyword_scores.values()),
     }
+
+
+class PromptRouter:
+    """Routes prompts to appropriate handlers based on intent and context."""
+    
+    def __init__(self):
+        """Initialize the prompt router."""
+        self.default_model = DEFAULT_MODEL
+        self.default_max_tokens = DEFAULT_MAX_TOKENS
+        self.default_temperature = DEFAULT_TEMPERATURE
+    
+    def route_prompt(self, prompt: str) -> str:
+        """
+        Route a prompt through the appropriate processing pipeline.
+        
+        Args:
+            prompt (str): The input prompt
+            
+        Returns:
+            str: The processed prompt
+        """
+        try:
+            # Analyze prompt context
+            context = analyze_prompt_context(prompt)
+            
+            # Classify intent
+            intent = classify_prompt_intent(prompt)
+            
+            # Get intent category
+            category = get_intent_category(intent)
+            
+            # Apply category-specific processing
+            if category == "commercial":
+                return self._process_commercial_prompt(prompt, context)
+            elif category == "artistic":
+                return self._process_artistic_prompt(prompt, context)
+            elif category == "social":
+                return self._process_social_prompt(prompt, context)
+            elif category == "educational":
+                return self._process_educational_prompt(prompt, context)
+            else:
+                return prompt
+                
+        except Exception as e:
+            print(f"Error routing prompt: {str(e)}")
+            return prompt
+    
+    def _process_commercial_prompt(self, prompt: str, context: Dict) -> str:
+        """Process commercial prompts."""
+        # Add commercial-specific enhancements
+        return f"{prompt}, professional commercial photography, high-end product visualization"
+    
+    def _process_artistic_prompt(self, prompt: str, context: Dict) -> str:
+        """Process artistic prompts."""
+        # Add artistic-specific enhancements
+        return f"{prompt}, artistic composition, creative expression"
+    
+    def _process_social_prompt(self, prompt: str, context: Dict) -> str:
+        """Process social prompts."""
+        # Add social-specific enhancements
+        return f"{prompt}, social media optimized, engaging composition"
+    
+    def _process_educational_prompt(self, prompt: str, context: Dict) -> str:
+        """Process educational prompts."""
+        # Add educational-specific enhancements
+        return f"{prompt}, clear educational visualization, informative composition"
