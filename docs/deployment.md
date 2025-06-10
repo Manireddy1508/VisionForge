@@ -1,6 +1,95 @@
-# Deployment Guide
+# Deployment Documentation
 
-This document outlines the CI/CD pipeline and deployment process for the AI Image Generation System.
+## Environment Modes
+
+The application supports two deployment modes:
+- Production (default)
+- Development (isolated)
+
+## Development Mode Setup
+
+### Local Development
+
+1. Create a `.env.develop` file with development-specific variables:
+```bash
+cp .env.example .env.develop
+# Edit .env.develop with development values
+```
+
+2. Start development services:
+```bash
+docker-compose -f docker-compose.develop.yml up --build
+```
+
+Services will be available at:
+- Gradio UI: http://localhost:7865
+- Dashboard: http://localhost:7862
+- Milvus: localhost:19531
+
+### Cloud Development
+
+1. Set up development secrets in GitHub:
+   - `GCP_PROJECT_DEV`
+   - `GCP_SA_KEY_DEV`
+   - `OPENAI_API_KEY_DEV`
+   - `OPENAI_IMAGE_MODEL_DEV`
+   - `GCS_BUCKET_NAME_DEV`
+   - `MILVUS_HOST_DEV`
+   - `MILVUS_PORT_DEV`
+
+2. Deploy to development environment:
+```bash
+./deploy_develop.sh
+```
+
+## Changelog
+
+### [2024-03-20] - Development Mode Setup
+- Created: `docker-compose.develop.yml` → Isolated development services
+- Created: `.env.develop` → Development environment variables
+- Created: `deploy_develop.sh` → Development deployment script
+- Created: `.github/workflows/deploy_develop.yml` → Development CI/CD workflow
+- Created: `docs/deployment.md` → Deployment documentation
+
+### Service Isolation
+- Gradio UI: Port 7865 (dev) vs 7860 (prod)
+- Dashboard: Port 7862 (dev) vs 7861 (prod)
+- Milvus: Port 19531 (dev) vs 19530 (prod)
+- Volume directories: `volumes-dev/` vs `volumes/`
+
+### Environment Variables
+- All development variables suffixed with `_DEV`
+- Separate GCP project and service accounts
+- Isolated GCS buckets and API keys
+
+## Production Mode
+
+The original production configuration remains unchanged:
+- `docker-compose.yml`
+- `deploy_backend.sh`
+- `.github/workflows/deploy.yml`
+
+## Best Practices
+
+1. **Local Development**
+   - Use `docker-compose.develop.yml` for local testing
+   - Never modify production files directly
+   - Test changes in development mode first
+
+2. **Cloud Deployment**
+   - Development branch deploys to dev environment
+   - Main branch deploys to production
+   - Use separate service accounts and projects
+
+3. **Data Isolation**
+   - Development uses separate volumes
+   - Development uses separate GCS buckets
+   - Development uses separate Milvus collections
+
+4. **Resource Management**
+   - Development uses fewer resources
+   - Development has lower instance limits
+   - Development uses separate API keys
 
 ## CI/CD Pipeline Overview
 

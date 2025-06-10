@@ -1,0 +1,78 @@
+# This workflow deploys the AI Image Generator application to Google Cloud Run in development mode
+name: Deploy to Cloud Run (Develop)
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_DEV }}
+  SERVICE_NAME: ai-image-generator-dev
+  REGION: us-central1
+  IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_DEV }}/ai-image-generator-dev
+
+jobs:
+  deploy:
+    name: Deploy (Develop)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker
+
+      - name: Set IAM Policy
+        run: |
+          gcloud beta run services add-iam-policy-binding \
+            --region=${{ env.REGION }} \
+            --member=allUsers \
+            --role=roles/run.invoker \
+            ${{ env.SERVICE_NAME }} || true
+
+      - name: Build and Push Container
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:develop-${{ github.sha }} .
+          docker push ${{ env.IMAGE_NAME }}:develop-${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:develop-${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars="OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV }}" \
+            --set-env-vars="OPENAI_IMAGE_MODEL=${{ secrets.OPENAI_IMAGE_MODEL_DEV }}" \
+            --set-env-vars="GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME_DEV }}" \
+            --set-env-vars="PYTHONUNBUFFERED=1" \
+            --set-env-vars="GRADIO_SERVER_NAME=0.0.0.0" \
+            --set-env-vars="GRADIO_SERVER_PORT=8080" \
+            --set-env-vars="MILVUS_HOST=${{ secrets.MILVUS_HOST_DEV }}" \
+            --set-env-vars="MILVUS_PORT=${{ secrets.MILVUS_PORT_DEV }}" \
+            --set-env-vars="ENVIRONMENT=develop" \
+            --timeout=600s \
+            --cpu=2 \
+            --memory=4Gi \
+            --min-instances=0 \
+            --max-instances=5 \
+            --port=8080 \
+            --use-http2
+
+      - name: Get Service URL
+        run: |
+          echo "Development Application URL: $(gcloud run services describe ${{ env.SERVICE_NAME }} --platform managed --region ${{ env.REGION }} --format 'value(status.url)')" >> $GITHUB_STEP_SUMMARY 

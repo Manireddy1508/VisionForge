@@ -1,111 +1,196 @@
-# Cloud Image Generation Backend (Google Imagen API)
+# AI Image Generation Playground
 
-## Overview
-This backend provides a Gradio UI for prompt-enhanced image generation using Google Cloud's Imagen API (Vertex AI). All generated images are stored in Google Cloud Storage (GCS) and returned with signed URLs for secure access.
+A powerful AI-powered image generation system that combines advanced prompt engineering, image analysis, and vector search capabilities to create high-quality images. The system uses a combination of GPT-4 Vision for image analysis, OpenAI's DALL-E for image generation, and Milvus for vector similarity search.
 
----
+## 🏗️ System Architecture
 
-## Prerequisites
-- Google Cloud project with billing enabled
-- Vertex AI and Cloud Run APIs enabled
-- Google Container Registry enabled
-- Service account with:
-  - `roles/aiplatform.user`
-  - `roles/storage.objectAdmin`
-- Docker installed
-- `gcloud` CLI installed and authenticated
+The system consists of several key components:
 
----
+### Core Components
 
-## Environment Variables
-Set these in your `.env` file or Cloud Run environment:
+1. **Prompt Enhancement System**
+   - `PromptEnhancer`: Enhances user prompts using GPT-4
+   - `PromptRouter`: Routes prompts to appropriate models
+   - `PromptEditor`: Allows manual prompt editing
+   - `ImageDescriber`: Analyzes reference images using BLIP and GPT-4 Vision
 
-- `OPENAI_API_KEY` (for prompt enhancement)
-- `GOOGLE_IMAGE_MODEL` (default: `imagen-3.0-generate-002`)
-- `GCS_BUCKET_NAME` (your GCS bucket for outputs)
-- `GOOGLE_CLOUD_PROJECT` (your GCP project ID)
-- `GOOGLE_CLOUD_LOCATION` (default: `us-central1`)
+2. **Vector Database (Milvus)**
+   - Stores and searches similar prompts and images
+   - Enables prompt enhancement using historical data
+   - Maintains collections for prompts and images
 
----
+3. **Image Generation**
+   - Uses OpenAI's DALL-E for high-quality image generation
+   - Supports multiple output variations
+   - Configurable parameters (steps, guidance, seed)
 
-## Local Development
-1. Install dependencies:
+4. **Web Interface**
+   - Gradio-based main application (port 7860)
+   - Streamlit-based dashboard (port 7861)
+   - Interactive prompt editing and image generation
+
+### Infrastructure
+
+- **Docker-based Deployment**
+  - Multi-container setup with Docker Compose
+  - Services: App, Dashboard, Milvus, MinIO, etcd
+  - Volume management for persistent storage
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Docker and Docker Compose
+- Python 3.12+
+- OpenAI API key
+- Google Cloud credentials (for cloud deployment)
+
+### Environment Variables
+
+Create a `.env` file with:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_IMAGE_MODEL=dall-e-3
+GOOGLE_CLOUD_PROJECT=your_gcp_project
+GCS_BUCKET_NAME=your_bucket_name
+```
+
+### Local Development
+
+1. **Clone the repository:**
    ```bash
+   git clone https://github.com/Manireddy1508/newcrux.git
+   cd newcrux
+   ```
+
+2. **Set up Python environment:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # or `venv\Scripts\activate` on Windows
    pip install -r requirements.txt
    ```
-2. Run the app:
-   ```bash
-   python src/app.py
-   ```
-3. Access Gradio UI at [http://localhost:7860](http://localhost:7860)
 
----
-
-## Docker Build & Run
-1. Build the Docker image:
+3. **Run with Docker Compose:**
    ```bash
-   docker build -t cloud-image-gen .
-   ```
-2. Run locally:
-   ```bash
-   docker run --env-file .env -p 7860:7860 cloud-image-gen
+   docker-compose up --build
    ```
 
----
+4. **Access the applications:**
+   - Main app: http://localhost:7860
+   - Dashboard: http://localhost:7861
 
-## Deploy to Google Cloud Run
-1. Edit `deploy_backend.sh` with your project and bucket info, or export as env vars:
-   ```bash
-   export PROJECT_ID=your-gcp-project
-   export REGION=us-central1
-   export SERVICE_NAME=cloud-image-gen
-   export GCS_BUCKET=your-bucket-name
-   ./deploy_backend.sh
-   ```
-2. The script will:
-   - Build and push the Docker image
-   - Deploy to Cloud Run with 4Gi memory, 2 CPUs, 600s timeout
-   - Allow unauthenticated access
-   - Print the service URL
+### Docker Services
 
----
+The system runs several Docker services:
 
-## Testing the Service
-- Open the Cloud Run service URL in your browser.
-- Enter a prompt and (optionally) reference images.
-- Generate enhanced prompts, then generate images.
-- Each generated image is stored in GCS and a signed URL is used for display/download.
+- **app**: Main Gradio application (port 7860)
+- **dashboard**: Streamlit dashboard (port 7861)
+- **standalone**: Milvus vector database
+- **minio**: Object storage for Milvus
+- **etcd**: Distributed key-value store for Milvus
 
----
+## 📁 Project Structure
 
-## Testing Milvus Integration with Docker
+```
+.
+├── src/
+│   ├── app.py                 # Main Gradio application
+│   ├── image_generator.py     # Image generation logic
+│   ├── milvus_utils.py       # Vector database operations
+│   ├── dashboard/            # Streamlit dashboard
+│   └── prompting/            # Prompt engineering modules
+│       ├── prompt_enhancer.py
+│       ├── prompt_router.py
+│       ├── prompt_editor.py
+│       ├── image_describer.py
+│       └── model_manager.py
+├── tests/                    # Test suite
+├── docs/                     # Documentation
+├── volumes/                  # Persistent storage
+├── Dockerfile               # Main application container
+└── docker-compose.yml       # Multi-container setup
+```
 
-To test the Milvus integration, follow these steps:
+## 🔧 Key Features
 
-1. **Ensure Docker is installed**: Make sure you have Docker installed on your system.
+1. **Advanced Prompt Engineering**
+   - GPT-4 powered prompt enhancement
+   - Reference image analysis
+   - Similar prompt search and reuse
 
-2. **Build the Docker image**: Run the following command in the root directory of your project to build the Docker image:
-   ```bash
-   docker build -t milvus-integration .
-   ```
+2. **Image Generation**
+   - Multiple output variations
+   - Configurable parameters
+   - Reference image support
 
-3. **Run the Docker container**: Use the following command to run the container:
-   ```bash
-   docker run -p 7860:7860 milvus-integration
-   ```
+3. **Vector Search**
+   - Similar prompt retrieval
+   - Image similarity search
+   - Historical data reuse
 
-4. **Access the application**: Open your web browser and go to `http://localhost:7860` to access the application.
+4. **Monitoring and Analytics**
+   - Streamlit dashboard
+   - Operation logging
+   - Performance metrics
 
-5. **Check logs**: You can check the logs in the `logs` directory inside the container. You can also view the logs directly in the terminal where you ran the Docker container.
+## 🛠️ Development
 
-6. **Clean up**: After testing, you can stop the container by pressing `Ctrl + C` in the terminal where the container is running.
+### Adding New Features
 
-This setup will allow you to test the Milvus integration in an isolated environment.
+1. **New Models**
+   - Add model configuration in `src/prompting/model_manager.py`
+   - Update `PromptRouter` to handle new model types
 
----
+2. **New Prompt Templates**
+   - Add templates in `src/prompting/prompt_templates.py`
+   - Update `PromptEnhancer` to use new templates
 
-## Notes
-- All secrets/configs are managed via environment variables.
-- Prompt enhancement and image generation are modular and separated.
-- Signed URLs for GCS outputs are valid for 1 hour by default.
-- For production, restrict service account permissions as needed. 
+3. **New Vector Search Features**
+   - Extend `milvus_utils.py` with new search functions
+   - Update collections schema if needed
+
+### Testing
+
+Run tests with:
+```bash
+pytest tests/
+```
+
+## 📊 Monitoring
+
+The Streamlit dashboard (port 7861) provides:
+- System health metrics
+- Operation logs
+- Performance statistics
+- Resource usage
+
+## 🔐 Security
+
+- API keys stored in environment variables
+- Docker container isolation
+- Secure volume mounting
+- No sensitive data in version control
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Authors
+
+- Manireddy1508 - Initial work
+
+## 🙏 Acknowledgments
+
+- OpenAI for GPT-4 and DALL-E
+- Milvus for vector database
+- Gradio and Streamlit for UI
+- All contributors and users 
