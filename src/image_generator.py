@@ -11,8 +11,6 @@ from google.cloud import storage
 from src.prompting.constants import (
     PROMPT_PREFIX,
     PROMPT_SUFFIX,
-    NEGATIVE_PROMPT_PREFIX,
-    NEGATIVE_PROMPT_SUFFIX,
 )
 
 # Configure logging
@@ -40,7 +38,6 @@ class ImageGenerator:
     def generate_image(
         self,
         prompt: str,
-        negative_prompt: str = "",
         guidance_scale: float = 7.5,
         width: int = 512,
         height: int = 512,
@@ -53,7 +50,6 @@ class ImageGenerator:
         
         Args:
             prompt: The text prompt describing the image to generate
-            negative_prompt: Text describing what should not be in the image
             guidance_scale: How closely to follow the prompt (higher = more precise)
             width: Image width in pixels
             height: Image height in pixels
@@ -65,18 +61,13 @@ class ImageGenerator:
             PIL Image object
         """
         try:
-            # Format prompts
+            # Format prompt
             final_prompt = f"{PROMPT_PREFIX}{prompt}{PROMPT_SUFFIX}"
-            if negative_prompt:
-                final_neg = f"{NEGATIVE_PROMPT_PREFIX}{negative_prompt}{NEGATIVE_PROMPT_SUFFIX}"
-            else:
-                final_neg = ""
             
             # Generate image
             response = self.client.images.generate(
                 model=self.model,
                 prompt=final_prompt,
-                negative_prompt=final_neg,
                 size=f"{width}x{height}",
                 quality="standard",
                 n=1,

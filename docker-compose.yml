@@ -55,5 +55,30 @@ services:
       - OPENAI_IMAGE_MODEL=${OPENAI_IMAGE_MODEL}
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
       - GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
+      - PORT=7860
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/input_images:/app/input_images
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/output:/app/output
+    depends_on:
+      - standalone
+
+  dashboard:
+    build: .
+    ports:
+      - "7861:7861"
+    environment:
+      - MILVUS_HOST=standalone
+      - MILVUS_PORT=19530
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_IMAGE_MODEL=${OPENAI_IMAGE_MODEL}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
+      - PORT=7861
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/input_images:/app/input_images
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/output:/app/output
+    command: streamlit run src/dashboard/app.py --server.port=7861 --server.address=0.0.0.0
     depends_on:
       - standalone 

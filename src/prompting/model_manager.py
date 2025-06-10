@@ -7,7 +7,7 @@ from huggingface_hub import hf_hub_download, HfFolder
 from transformers import AutoProcessor, AutoModelForVision2Seq
 
 # === Constants ===
-MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "/app/models")
+MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "./models")
 VISION_MODEL_NAME = os.getenv(
     "VISION_MODEL_NAME", "Salesforce/blip-image-captioning-base"
 )

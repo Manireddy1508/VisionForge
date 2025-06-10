@@ -1,144 +1,133 @@
-# === Prompt Template ===
-PROMPT_PREFIX = "It's very important that [main object or objective] isn't modified"
+"""
+Constants and configuration for the prompt enhancement system.
+Provides dynamic template structures and configuration management.
+"""
 
-PROMPT_SUFFIX = (
-    "and take all the time you needed as it is very important to achieve the "
-    "best possible result"
-)
+from typing import Dict, List, Optional, TypedDict
+from dataclasses import dataclass
+from enum import Enum, auto
 
-# === Negative Prompt Template ===
-NEGATIVE_PROMPT_PREFIX = "Avoid including"
+# === Template Field Definitions ===
+class TemplateFieldType(Enum):
+    REQUIRED = auto()
+    OPTIONAL = auto()
+    CONTEXTUAL = auto()
 
-NEGATIVE_PROMPT_SUFFIX = "in the generated image"
+@dataclass
+class TemplateField:
+    name: str
+    field_type: TemplateFieldType
+    description: str
+    constraints: Optional[List[str]] = None
+    examples: Optional[List[str]] = None
 
-TEMPLATE_FORMAT = (
-    "prefix [art medium] [main object or objective] [attribute] [expression] "
-    "[key light] [detailing] [optional: camera type] [optional: camera angle] "
-    "[optional: artistic technique] suffix"
-)
+# === Dynamic Template Structure ===
+TEMPLATE_FIELDS = {
+    "art_medium": TemplateField(
+        name="art medium",
+        field_type=TemplateFieldType.REQUIRED,
+        description="The artistic medium or style of the image",
+        constraints=["Must be appropriate for the context", "Should enhance the main subject"]
+    ),
+    "main_object": TemplateField(
+        name="main object or objective",
+        field_type=TemplateFieldType.REQUIRED,
+        description="The primary subject or focus of the image",
+        constraints=["Must be clearly defined", "Should be the central element"]
+    ),
+    "attribute": TemplateField(
+        name="attribute",
+        field_type=TemplateFieldType.REQUIRED,
+        description="Key characteristics or qualities of the main subject",
+        constraints=["Must be relevant to the subject", "Should enhance understanding"]
+    ),
+    "expression": TemplateField(
+        name="expression",
+        field_type=TemplateFieldType.REQUIRED,
+        description="The emotional or visual tone of the image",
+        constraints=["Must align with intent", "Should be consistent"]
+    ),
+    "key_light": TemplateField(
+        name="key light",
+        field_type=TemplateFieldType.REQUIRED,
+        description="The primary lighting setup or mood",
+        constraints=["Must be physically plausible", "Should enhance the subject"]
+    ),
+    "detailing": TemplateField(
+        name="detailing",
+        field_type=TemplateFieldType.REQUIRED,
+        description="Specific details or features to emphasize",
+        constraints=["Must be relevant", "Should add value"]
+    ),
+    "camera_type": TemplateField(
+        name="camera type",
+        field_type=TemplateFieldType.OPTIONAL,
+        description="The type of camera or perspective",
+        constraints=["Must be appropriate for the context", "Should enhance realism"]
+    ),
+    "camera_angle": TemplateField(
+        name="camera angle",
+        field_type=TemplateFieldType.OPTIONAL,
+        description="The viewing angle or perspective",
+        constraints=["Must be physically possible", "Should enhance composition"]
+    ),
+    "artistic_technique": TemplateField(
+        name="artistic technique",
+        field_type=TemplateFieldType.OPTIONAL,
+        description="Specific artistic methods or styles",
+        constraints=["Must be appropriate for the medium", "Should enhance the result"]
+    )
+}
 
-# === Basic Settings ===
-MAX_PROMPT_LENGTH = 150
 DEFAULT_NUM_PROMPTS = 5
+MAX_PROMPT_LENGTH = 150# === Backwards Compatibility Constants ===
 MIN_WORD_COUNT = 8
+ENFORCE_SINGLE_SENTENCE = True
+STRIP_QUOTES = True
+SUPPRESS_NUMBERING = True
+IGNORE_EXPLICIT_COLORS = True
+REQUIRE_REALISTIC_SCALE = True
+ALLOW_CUSTOM_INTENTS = True
+ENABLE_ARTISTIC_TECHNIQUES = True
+ENABLE_DYNAMIC_COMPOSITION = True
+ENABLE_STYLE_TRANSFER = True
 
-# === Required Prompt Elements ===
-REQUIRED_ELEMENTS = [
-    "art medium",
-    "main object",
-    "attribute",
-    "expression",
-    "key light",
-    "detailing",
-]
+# === Configuration Management ===
+@dataclass
+class PromptConfig:
+    max_length: int = 150
+    default_num_prompts: int = 5
+    min_word_count: int = 8
+    enforce_single_sentence: bool = True
+    strip_quotes: bool = True
+    suppress_numbering: bool = True
+    ignore_explicit_colors: bool = True
+    require_realistic_scale: bool = True
+    allow_custom_intents: bool = True
+    enable_artistic_techniques: bool = True
+    enable_dynamic_composition: bool = True
+    enable_style_transfer: bool = True
 
-# === Optional Prompt Enhancements ===
-OPTIONAL_ELEMENTS = [
-    "camera type",  # e.g., DSLR, top-view drone, 35mm film, anime-style, surveillance
-    "camera angle",  # e.g., over-the-shoulder, bird's eye, wide shot, macro close-up
-    "artistic technique",  # e.g., chiaroscuro, impasto, pointillism, etc.
-]
+# === System Configuration ===
+class SystemConfig(TypedDict):
+    roles: Dict[str, str]
+    style_keys: Dict[str, str]
+    intent_instructions: Dict[str, str]
 
-# === Camera Settings ===
-CAMERA_TYPES = [
-    "DSLR",
-    "mirrorless",
-    "drone",
-    "35mm film",
-    "anime-style",
-    "cinematic",
-    "surveillance",
-    "GoPro",
-    "smartphone",
-    "medium format",
-    "large format",
-    "instant camera",
-    "toy camera",
-    "infrared",
-    "thermal",
-]
+# === Default Configurations ===
+DEFAULT_PROMPT_CONFIG = PromptConfig()
 
-CAMERA_ANGLES = [
-    "over-the-shoulder",
-    "low-angle",
-    "bird's eye",
-    "macro close-up",
-    "wide shot",
-    "top-down",
-    "first-person",
-    "side profile",
-    "dutch angle",
-    "aerial view",
-    "worm's eye",
-    "canted angle",
-    "point-of-view",
-    "establishing shot",
-]
-
-# === Artistic Techniques ===
-ARTISTIC_TECHNIQUES = [
-    "chiaroscuro",
-    "impasto",
-    "pointillism",
-    "sfumato",
-    "glazing",
-    "wet-on-wet",
-    "dry brush",
-    "scumbling",
-    "underpainting",
-    "alla prima",
-    "grisaille",
-    "tenebrism",
-    "cross-hatching",
-    "stippling",
-    "sgraffito",
-]
-
-# === Art Mediums ===
-ART_MEDIUMS = [
-    "oil painting",
-    "watercolor",
-    "acrylic",
-    "digital art",
-    "photography",
-    "charcoal",
-    "pastel",
-    "ink",
-    "mixed media",
-    "gouache",
-    "tempera",
-    "fresco",
-    "encaustic",
-    "collage",
-    "etching",
-]
-
-# === System Roles ===
-SYSTEM_ROLES = {
-    "prompt_enhancer": "You are a prompt enhancement assistant for Flux Pro.",
-    "intent_classifier": "You are an intent classification engine for Flux Pro.",
-    "image_describer": "You are an image analysis module for Flux Pro.",
-}
-
-# === Prompt Behavior Settings ===
-PROMPT_SETTINGS = {
-    "enforce_single_sentence": True,
-    "strip_quotes": True,
-    "suppress_numbering": True,
-    "ignore_explicit_colors": True,
-    "require_realistic_scale": True,
-    "allow_custom_intents": True,
-    "enable_artistic_techniques": True,
-    "enable_dynamic_composition": True,
-    "enable_style_transfer": True,
-}
-
-# === Style and Caption Keys ===
-STYLE_HINT_KEY = "style_description"
-CAPTION_KEY = "full_caption"
-
-# === Intent Instructions ===
-INTENT_INSTRUCTIONS = {
+DEFAULT_SYSTEM_CONFIG = SystemConfig(
+    roles={
+        "prompt_enhancer": "You are a prompt enhancement assistant for AI image generation.",
+        "intent_classifier": "You are an intent classification engine for AI image generation.",
+        "image_describer": "You are an image analysis module for AI image generation."
+    },
+    style_keys={
+        "style_description": "style_description",
+        "full_caption": "full_caption"
+    },
+    intent_instructions={
     "product-ad": (
         "Think like a professional photographer. Focus on commercial visual "
         "storytelling that highlights the product's usage, form, and emotional "
@@ -183,5 +172,41 @@ INTENT_INSTRUCTIONS = {
     "experimental-style": (
         "Push creative boundaries with unique and innovative visual approaches. "
         "Combine different artistic techniques and mediums for novel effects."
-    ),
+        )
 }
+)
+
+# === Backwards Compatibility ===
+# These maintain compatibility with existing code while using the new structure
+PROMPT_PREFIX = "It's very important that [main object or objective] isn't modified"
+PROMPT_SUFFIX = (
+    "and take all the time you needed as it is very important to achieve the "
+    "best possible result"
+)
+
+TEMPLATE_FORMAT = (
+    "prefix [art medium] [main object or objective] [attribute] [expression] "
+    "[key light] [detailing] [optional: camera type] [optional: camera angle] "
+    "[optional: artistic technique] suffix"
+)
+
+REQUIRED_ELEMENTS = [field.name for field in TEMPLATE_FIELDS.values() 
+                    if field.field_type == TemplateFieldType.REQUIRED]
+
+OPTIONAL_ELEMENTS = [field.name for field in TEMPLATE_FIELDS.values() 
+                    if field.field_type == TemplateFieldType.OPTIONAL]
+
+# === Export Configuration ===
+__all__ = [
+    'TEMPLATE_FIELDS',
+    'PromptConfig',
+    'SystemConfig',
+    'DEFAULT_PROMPT_CONFIG',
+    'DEFAULT_SYSTEM_CONFIG',
+    'PROMPT_PREFIX',
+    'PROMPT_SUFFIX',
+    'TEMPLATE_FORMAT',
+    'REQUIRED_ELEMENTS',
+    'OPTIONAL_ELEMENTS'
+]
+

@@ -1,6 +1,14 @@
-from typing import Dict, List, Optional
+"""
+Template management and prompt building for the image generation system.
+Provides dynamic template-based prompt generation and configuration.
+"""
+
+import logging
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any, Set
 
 from prompting.constants import (
+    TEMPLATE_FIELDS,
     PROMPT_PREFIX,
     PROMPT_SUFFIX,
     TEMPLATE_FORMAT,
@@ -8,215 +16,188 @@ from prompting.constants import (
     REQUIRED_ELEMENTS,
     OPTIONAL_ELEMENTS,
     ARTISTIC_TECHNIQUES,
-    ART_MEDIUMS,
+    ART_MEDIUM_DEFINITION,
     CAMERA_TYPES,
     CAMERA_ANGLES,
+    PromptConfig,
+    DEFAULT_PROMPT_CONFIG,
+    DEFAULT_SYSTEM_CONFIG,
 )
 
-# === Optional: Custom structured template overrides per intent ===
-TEMPLATE_OVERRIDES: Dict[str, str] = {
-    "experimental-style": (
-        "prefix [art medium] [scene] [visual tone] [expression] "
-        "[composition] [artistic technique] suffix"
-    ),
-    "artistic-expression": (
-        "prefix [art medium] [subject] [style] [technique] "
-        "[composition] [lighting] suffix"
-    ),
-    "product-ad": (
-        "prefix [art medium] [product] [setting] [mood] [lighting] "
-        "[camera type] [camera angle] suffix"
-    ),
-    "educational-content": (
-        "prefix [art medium] [subject] [style] [composition] "
-        "[lighting] [technique] suffix"
-    ),
-}
+# === Logging Setup ===
+logger = logging.getLogger(__name__)
 
-# === Expandable intent-to-instruction mapping ===
-INTENT_INSTRUCTIONS: Dict[str, str] = {
-    "product-ad": (
-        "Think like a professional photographer. Focus on commercial visual "
-        "storytelling that highlights the product's usage, form, and emotional "
-        "appeal. Include natural camera decisions (angle or type) when they "
-        "enhance realism or brand perception. Consider the product's target "
-        "audience and market positioning when choosing artistic style and "
-        "composition."
-    ),
-    "service-promotion": (
-        "Imagine you're capturing the real-life moment a service is being used. "
-        "Emphasize tone, setting, and clarity. You may use cinematic framing or "
-        "lifestyle-oriented composition where helpful. Focus on the human element "
-        "and the service's impact on people's lives."
-    ),
-    "public-awareness": (
-        "Use symbolic or emotional imagery to visually communicate the importance "
-        "of a cause or campaign. Consider using artistic techniques that enhance "
-        "the emotional impact. Balance between attention-grabbing visuals and "
-        "clear message communication."
-    ),
-    "brand-storytelling": (
-        "Craft lifestyle-driven prompts that reflect the brand's values. When "
-        "appropriate, you may include a camera perspective that emphasizes mood, "
-        "composition, or the viewer's relationship to the scene. Ensure the "
-        "visual style aligns with the brand's identity and target audience."
-    ),
-    "artistic-expression": (
-        "Focus on creative and artistic elements. Emphasize visual style, "
-        "composition, and emotional impact. Feel free to incorporate specific "
-        "artistic techniques and mediums. Push creative boundaries while "
-        "maintaining visual coherence and impact."
-    ),
-    "social-trend": (
-        "Create prompts that align with current social media trends and viral "
-        "content styles. Consider popular visual aesthetics and contemporary "
-        "artistic movements. Balance trendiness with timeless visual appeal."
-    ),
-    "educational-content": (
-        "Design clear, informative visuals that effectively communicate "
-        "educational concepts. Use appropriate artistic techniques to enhance "
-        "clarity and engagement. Ensure the visual style supports the learning "
-        "objectives."
-    ),
-    "campaign-launch": (
-        "Create impactful, attention-grabbing prompts suitable for marketing "
-        "campaign launches. Incorporate dynamic composition and compelling "
-        "visual elements. Balance creativity with brand consistency and message "
-        "clarity."
-    ),
-    "experimental-style": (
-        "Push creative boundaries with unique and innovative visual approaches. "
-        "Combine different artistic techniques and mediums for novel effects. "
-        "Maintain visual coherence while exploring new possibilities."
-    ),
-}
+@dataclass
+class TemplateContext:
+    """Context for template-based prompt generation."""
+    intent: str
+    num_prompts: int
+    style_hint: str = ""
+    product_description: str = ""
+    image_description: str = ""
+    config: PromptConfig = field(default_factory=lambda: DEFAULT_PROMPT_CONFIG)
 
+@dataclass
+class PromptTemplate:
+    """Represents a structured prompt template."""
+    fields: Dict[str, str]
+    prefix: str = PROMPT_PREFIX
+    suffix: str = PROMPT_SUFFIX
+    is_valid: bool = True
+    warnings: List[str] = None
 
-def get_intent_instruction(intent: str) -> str:
+    def __post_init__(self):
+        if self.warnings is None:
+            self.warnings = []
+
+    def to_string(self) -> str:
+        """Convert template to a formatted prompt string."""
+        # Build the main content
+        content = []
+        for field_name in TEMPLATE_FIELDS:
+            if field_name in self.fields:
+                content.append(f"[{self.fields[field_name]}]")
+        
+        # Combine with prefix and suffix
+        return f"{self.prefix} {' '.join(content)} {self.suffix}"
+
+class PromptTemplateBuilder:
     """
-    Get the instruction template for a specific intent.
+    Builds and validates prompt templates using dynamic field definitions.
+    Uses template fields from constants.py for structure and validation.
+    """
+
+    def __init__(self, config: PromptConfig = DEFAULT_PROMPT_CONFIG):
+        """
+        Initialize the template builder.
 
     Args:
-        intent (str): The intent label to get instructions for
+            config: Configuration for template building
+        """
+        self.config = config
+        logger.info(f"Initialized PromptTemplateBuilder with config: {config}")
 
-    Returns:
-        str: The instruction template for the intent
-    """
-    return INTENT_INSTRUCTIONS.get(
-        intent,
-        f"Use your full understanding of visual storytelling to create prompts "
-        f"that suit this intent: '{intent}'. Adapt the tone, framing, and "
-        f"technical language as needed — especially when a camera type or angle "
-        f"might improve realism. Consider the target audience and desired "
-        f"emotional impact when choosing artistic techniques and composition.",
-    )
-
-
-def get_template_for_intent(intent: str) -> str:
-    """
-    Get the template format for a specific intent.
+    def build_template(self, fields: Dict[str, str]) -> PromptTemplate:
+        """
+        Build a prompt template from field values.
 
     Args:
-        intent (str): The intent label to get template for
+            fields (Dict[str, str]): Dictionary of field names to values
 
     Returns:
-        str: The template format for the intent
-    """
-    return TEMPLATE_OVERRIDES.get(intent, TEMPLATE_FORMAT)
+            PromptTemplate: The built template
+        """
+        template = PromptTemplate(fields=fields)
+        
+        # Validate required fields
+        missing_fields = set(REQUIRED_ELEMENTS) - set(fields.keys())
+        if missing_fields:
+            template.is_valid = False
+            template.warnings.append(f"Missing required fields: {', '.join(missing_fields)}")
+        
+        # Validate field constraints
+        for field_name, value in fields.items():
+            field = TEMPLATE_FIELDS.get(field_name)
+            if field and field.constraints:
+                for constraint in field.constraints:
+                    if not self._validate_constraint(value, constraint):
+                        template.warnings.append(
+                            f"Field '{field_name}' violates constraint: {constraint}"
+                        )
+                        template.is_valid = False
+        
+        return template
 
+    def _validate_constraint(self, value: str, constraint: str) -> bool:
+        """Validate a field value against its constraint."""
+        if "must be" in constraint.lower():
+            return bool(value.strip())
+        return True
 
-def build_system_message(intent: str, num_prompts: int, style_hint: str = "") -> str:
-    """
-    Build the system message for GPT based on intent and style hints.
+    def build_system_message(self, context: TemplateContext) -> str:
+        """
+        Build a system message for GPT based on template context.
 
-    Args:
-        intent (str): The intent label
-        num_prompts (int): Number of prompts to generate
-        style_hint (str): Optional style hint from reference images
+        Args:
+            context: TemplateContext containing all relevant information
 
-    Returns:
-        str: The complete system message
-    """
-    print(f"\n🎯 [DEBUG] Building system message for intent: {intent}")
-    print(f"📌 [DEBUG] Number of prompts: {num_prompts}")
-    if style_hint:
-        print(f"🎨 [DEBUG] Style hint: {style_hint}")
+        Returns:
+            str: The complete system message
+        """
+        # Build field descriptions
+        field_descriptions = []
+        for field in TEMPLATE_FIELDS.values():
+            field_desc = f"- {field.name}: {field.description}"
+            if field.constraints:
+                field_desc += f"\n  Constraints: {', '.join(field.constraints)}"
+            field_descriptions.append(field_desc)
+        
+        # Build template structure
+        template_structure = " ".join(
+            f"[{field.name}]" for field in TEMPLATE_FIELDS.values()
+        )
+        
+        # Build base message
+        message = f"""
+You are a prompt enhancement assistant for AI image generation.
 
-    template_format = get_template_for_intent(intent)
+Your task is to transform the user's input into {context.num_prompts} fully structured, highly descriptive prompts suitable for AI image generation.
 
-    style_clause = (
-        f"The visual tone, lighting, and environment must align with this style: "
-        f"{style_hint}. Only override if the user explicitly requests a different "
-        f"style."
-        if style_hint
-        else ""
-    )
+Each prompt must follow this structure:
+{template_structure}
 
-    camera_instruction = (
-        "When the subject benefits from realistic photographic composition, infer "
-        "and include specific camera types or angles. Base these decisions on "
-        "what would be naturally used to capture the subject in a professional "
-        "context. Do not describe camera angle generically — use descriptive, "
-        "spatial, and cinematic language that aligns with the intended "
-        "perspective. Avoid including any examples or sample outputs. Let your "
-        "understanding of visual storytelling guide the phrasing in a way that "
-        "adapts to the prompt's intent."
-    )
-
-    artistic_instruction = (
-        "Consider incorporating appropriate artistic techniques that enhance the "
-        "visual impact and emotional resonance. Choose techniques that complement "
-        "the subject matter and intended style. Balance technical accuracy with "
-        "creative expression."
-    )
-
-    system_message = f"""
-You are a prompt enhancement assistant for Flux Pro.
-
-Your task is to transform a short user input into {num_prompts} fully structured, highly descriptive prompts suitable for AI image generation.
-
-Each prompt must follow this format:
-{template_format}
-
-Prefix: "{PROMPT_PREFIX}"
-Suffix: "{PROMPT_SUFFIX}"
+Required elements:
+{chr(10).join(field_descriptions)}
 
 Prompt constraints:
-- Must be under {MAX_PROMPT_LENGTH} words
-- Must include all of: {", ".join(REQUIRED_ELEMENTS)}
-- Optional when helpful: {", ".join(OPTIONAL_ELEMENTS)}
+- Must be under {context.config.max_length} words
+- Must include all required elements
+- Optional elements should be included when they enhance the result
 - Must be a single sentence (no bullet points, no numbering)
-- Avoid specific color terms unless inferred from reference images
-- Do not include examples or wrap prompts in quotes
+- Must maintain realistic physical proportions
+- Must follow the template structure exactly
+- Must start with: "{PROMPT_PREFIX}"
+- Must end with: "{PROMPT_SUFFIX}"
+"""
 
-All visual elements must appear with realistic physical proportions. Objects meant to be held, worn, or used must reflect true real-world size and context unless the user requests stylization or surrealism.
+        # Add context-specific instructions
+        if context.style_hint:
+            message += f"\nVisual style reference: {context.style_hint}"
+        if context.product_description:
+            message += f"\nProduct context: {context.product_description}"
+        if context.image_description:
+            message += f"\nAdditional image context: {context.image_description}"
 
-{style_clause}
+        # Add intent-specific instructions
+        intent_instruction = DEFAULT_SYSTEM_CONFIG["intent_instructions"].get(
+            context.intent,
+            f"Use your full understanding of visual storytelling to create prompts "
+            f"that suit this intent: '{context.intent}'. Adapt the tone, framing, "
+            f"and technical language as needed."
+        )
+        message += f"\n\nIntent-specific instructions:\n{intent_instruction}"
 
-{camera_instruction}
+        return message.strip()
 
-{artistic_instruction}
+    def reconstruct_prompt(self, field_values: Dict[str, str]) -> str:
+        """
+        Reconstruct a prompt from extracted field values.
 
-{get_intent_instruction(intent)}
+        Args:
+            field_values (Dict[str, str]): Dictionary of field names to values
 
-Available artistic techniques: {", ".join(ARTISTIC_TECHNIQUES)}
-Available art mediums: {", ".join(ART_MEDIUMS)}
-Available camera types: {", ".join(CAMERA_TYPES)}
-Available camera angles: {", ".join(CAMERA_ANGLES)}
-
-Only return {num_prompts} complete prompts, one per line. Do not explain or annotate.
-""".strip()
-
-    print("\n📝 [DEBUG] Generated system message:")
-    print(system_message)
-    return system_message
-
+        Returns:
+            str: The reconstructed prompt
+        """
+        template = self.build_template(field_values)
+        return template.to_string()
 
 def get_prompt_template(
     intent: str,
     num_prompts: int = 1,
     style_hint: Optional[str] = None,
-    reference_images: Optional[List] = None
+    reference_images: Optional[List] = None,
+    config: PromptConfig = DEFAULT_PROMPT_CONFIG,
 ) -> str:
     """
     Get a complete prompt template based on intent and context.
@@ -226,129 +207,47 @@ def get_prompt_template(
         num_prompts (int): Number of prompts to generate
         style_hint (str, optional): Optional style hint from reference images
         reference_images (List, optional): List of reference images
+        config (PromptConfig): Configuration for template building
         
     Returns:
         str: The complete prompt template
     """
     try:
-        # Get the base template format
-        template_format = get_template_for_intent(intent)
-        
-        # Get the intent-specific instruction
-        instruction = get_intent_instruction(intent)
-        
-        # Build the system message
-        system_message = build_system_message(
+        # Create template context
+        context = TemplateContext(
             intent=intent,
             num_prompts=num_prompts,
-            style_hint=style_hint or ""
+            style_hint=style_hint or "",
+            config=config
         )
         
-        # Combine everything into a complete template
-        template = f"""
-{system_message}
-
-Template Format:
-{template_format}
-
-Instructions:
-{instruction}
-
-Reference Images: {len(reference_images) if reference_images else 0}
-Style Hint: {style_hint if style_hint else 'None'}
-"""
-        return template.strip()
+        # Build template using builder
+        builder = PromptTemplateBuilder(config=config)
+        system_message = builder.build_system_message(context)
+        
+        # Add reference image count
+        if reference_images:
+            system_message += f"\n\nReference Images: {len(reference_images)}"
+        
+        return system_message.strip()
         
     except Exception as e:
-        print(f"Error generating prompt template: {str(e)}")
+        logger.error(f"Error generating prompt template: {e}")
         # Return a basic template as fallback
         return f"""
-You are a prompt enhancement assistant for Flux Pro.
+You are a prompt enhancement assistant for AI image generation.
 
 Your task is to transform a short user input into {num_prompts} fully structured, highly descriptive prompts suitable for AI image generation.
 
 Each prompt must follow this format:
-{TEMPLATE_FORMAT}
+{" ".join(f"[{field.name}]" for field in TEMPLATE_FIELDS.values())}
 
 Prefix: "{PROMPT_PREFIX}"
 Suffix: "{PROMPT_SUFFIX}"
 
 Prompt constraints:
-- Must be under {MAX_PROMPT_LENGTH} words
+- Must be under {config.max_length} words
 - Must include all of: {", ".join(REQUIRED_ELEMENTS)}
 - Optional when helpful: {", ".join(OPTIONAL_ELEMENTS)}
 - Must be a single sentence (no bullet points, no numbering)
-- Avoid specific color terms unless inferred from reference images
-- Do not include examples or wrap prompts in quotes
-""".strip()
-
-
-def get_negative_prompt_template(
-    intent: str,
-    style_hint: Optional[str] = None,
-    reference_images: Optional[List] = None
-) -> str:
-    """
-    Get a template for generating negative prompts based on intent and context.
-    
-    Args:
-        intent (str): The intent label
-        style_hint (str, optional): Optional style hint from reference images
-        reference_images (List, optional): List of reference images
-        
-    Returns:
-        str: The negative prompt template
-    """
-    try:
-        # Get intent-specific instruction
-        instruction = get_intent_instruction(intent)
-        
-        # Build the system message
-        system_message = f"""
-You are a negative prompt generation assistant for Flux Pro.
-
-Your task is to generate a negative prompt that helps avoid unwanted elements in the generated image.
-
-Consider the following:
-- Intent: {intent}
-- Style Hint: {style_hint if style_hint else 'None'}
-- Reference Images: {len(reference_images) if reference_images else 0}
-
-Instructions:
-{instruction}
-
-Negative prompt constraints:
-- Must be concise and specific
-- Focus on elements to avoid
-- Consider the intent and style
-- Avoid redundant or contradictory elements
-- Do not include positive elements
-
-Example format:
-"avoid [element1], [element2], [element3]"
-
-Only return the negative prompt. Do not include explanations or examples.
-""".strip()
-        
-        return system_message
-        
-    except Exception as e:
-        print(f"Error generating negative prompt template: {str(e)}")
-        # Return a basic template as fallback
-        return """
-You are a negative prompt generation assistant for Flux Pro.
-
-Your task is to generate a negative prompt that helps avoid unwanted elements in the generated image.
-
-Negative prompt constraints:
-- Must be concise and specific
-- Focus on elements to avoid
-- Consider the intent and style
-- Avoid redundant or contradictory elements
-- Do not include positive elements
-
-Example format:
-"avoid [element1], [element2], [element3]"
-
-Only return the negative prompt. Do not include explanations or examples.
 """.strip()

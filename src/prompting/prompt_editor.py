@@ -1,181 +1,169 @@
-from typing import List, Optional, Tuple, Dict, Any
+"""
+Prompt editing and enhancement functionality for the image generation system.
+Provides structured prompt editing with context-aware enhancement.
+"""
+
+import logging
+from typing import List, Optional, Dict, Any, Tuple
+
 from PIL import Image
 
-from prompting.constants import DEFAULT_NUM_PROMPTS
-from prompting.prompt_enhancer import enhance_prompt_with_chatgpt
+from prompting.constants import (
+    PromptConfig,
+    DEFAULT_PROMPT_CONFIG,
+)
+from prompting.prompt_enhancer import (
+    enhance_prompt_with_chatgpt,
+    EnhancementContext,
+)
 from prompting.prompt_router import PromptRouter
 
+# === Logging Setup ===
+logger = logging.getLogger(__name__)
+
+def pad_prompts(prompts: List[str], target_length: int) -> List[str]:
+    """
+    Pad a list of prompts to a target length with empty strings.
+    
+    Args:
+        prompts (List[str]): List of prompts to pad
+        target_length (int): Target length for the output list
+        
+    Returns:
+        List[str]: Padded list of prompts
+    """
+    return prompts + [""] * (target_length - len(prompts))
 
 def generate_editable_prompts(
-    user_prompt: str,
-    reference_images: Optional[List[Image.Image]] = None,
-    num_outputs: int = DEFAULT_NUM_PROMPTS,
-    style_hint: Optional[str] = None,
+    context: EnhancementContext,
 ) -> List[str]:
     """
     Generates enhanced prompts and pads them for editable display in the UI.
     This function serves as a bridge between the prompt enhancement system and the UI.
 
     Args:
-        user_prompt (str): The original user prompt.
-        reference_images (List[PIL.Image], optional): List of uploaded reference images.
-        num_outputs (int): Number of prompts to generate (user selected).
-        style_hint (str, optional): Optional style hint for prompt enhancement.
+        context (EnhancementContext): Context containing all relevant information
 
     Returns:
-        List[str]: Padded list of enhanced prompts (length = DEFAULT_NUM_PROMPTS).
+        List[str]: Padded list of enhanced prompts (length = context.config.default_num_prompts).
     """
-    print("\n🎯 [DEBUG] Starting prompt generation in editor...")
-    print(f"📌 [DEBUG] Base prompt: {user_prompt}")
-    print(f"📌 [DEBUG] Number of outputs requested: {num_outputs}")
-    print(
-        f"📌 [DEBUG] Number of reference images: {len(reference_images) if reference_images else 0}"
+    logger.info("Starting prompt generation in editor...")
+    logger.debug(f"Base prompt: {context.user_prompt}")
+    logger.debug(f"Number of outputs requested: {context.num_prompts}")
+    logger.debug(
+        f"Number of reference images: {len(context.reference_images) if context.reference_images else 0}"
     )
-    if style_hint:
-        print(f"📌 [DEBUG] Style hint: {style_hint}")
+    if context.style_hint:
+        logger.debug(f"Style hint: {context.style_hint}")
 
     try:
         prompts, raw_output = enhance_prompt_with_chatgpt(
-            user_prompt=user_prompt,
-            num_prompts=num_outputs,
-            reference_images=reference_images,
+            user_prompt=context.user_prompt,
+            num_prompts=context.num_prompts,
+            reference_images=context.reference_images,
             return_raw_output=True,  # Get raw output for debugging
         )
 
         if not isinstance(prompts, list):
             prompts = [str(prompts)]
 
-        print("\n📝 [DEBUG] Prompt Preview Output:")
+        logger.debug("Prompt Preview Output:")
         for i, p in enumerate(prompts):
-            print(f"  [{i+1}] {p}")
+            logger.debug(f"  [{i+1}] {p}")
 
-        # Ensure output list is always DEFAULT_NUM_PROMPTS long
-        padded_prompts = prompts + [""] * (DEFAULT_NUM_PROMPTS - len(prompts))
-        print(
-            f"✅ [DEBUG] Generated {len(prompts)} prompts, padded to {DEFAULT_NUM_PROMPTS}"
+        # Ensure output list is always the default length
+        padded_prompts = pad_prompts(prompts, context.config.default_num_prompts)
+        logger.info(
+            f"Generated {len(prompts)} prompts, padded to {context.config.default_num_prompts}"
         )
 
         return padded_prompts
 
     except Exception as e:
-        print(f"❌ [ERROR] Failed to generate prompts: {str(e)}")
+        logger.error(f"Failed to generate prompts: {e}")
         # Return empty prompts on error
-        return [""] * DEFAULT_NUM_PROMPTS
-
+        return [""] * context.config.default_num_prompts
 
 def batch_generate_prompts(
-    prompts: List[str],
-    reference_images: Optional[List[Image.Image]] = None,
-    num_outputs: int = DEFAULT_NUM_PROMPTS,
-    style_hint: Optional[str] = None,
+    contexts: List[EnhancementContext],
 ) -> List[List[str]]:
     """
-    Batch generate editable prompts for multiple input prompts.
+    Batch generate editable prompts for multiple input contexts.
 
     Args:
-        prompts (List[str]): List of original user prompts.
-        reference_images (List[PIL.Image], optional): List of uploaded reference images.
-        num_outputs (int): Number of prompts to generate per input.
-        style_hint (str, optional): Optional style hint for prompt enhancement.
+        contexts (List[EnhancementContext]): List of enhancement contexts
 
     Returns:
-        List[List[str]]: List of padded prompt lists.
+        List[List[str]]: List of padded prompt lists
     """
-    print(f"\n🔄 [DEBUG] Starting batch prompt generation for {len(prompts)} inputs")
-    return [
-        generate_editable_prompts(
-            user_prompt=prompt,
-            reference_images=reference_images,
-            num_outputs=num_outputs,
-            style_hint=style_hint,
-        )
-        for prompt in prompts
-    ]
-
+    logger.info(f"Starting batch prompt generation for {len(contexts)} inputs")
+    return [generate_editable_prompts(context) for context in contexts]
 
 class PromptEditor:
     """Handles prompt editing and enhancement functionality."""
     
-    def __init__(self):
-        """Initialize the prompt editor."""
-        self.prompt_router = PromptRouter()
-        self.default_num_prompts = DEFAULT_NUM_PROMPTS
+    def __init__(self, config: PromptConfig = DEFAULT_PROMPT_CONFIG):
+        """
+        Initialize the prompt editor.
+        
+        Args:
+            config (PromptConfig): Configuration for prompt editing
+        """
+        self.prompt_router = PromptRouter(config)
+        self.config = config
+        logger.info(f"Initialized PromptEditor with config: {config}")
     
     def edit_prompt(
         self,
-        prompt: str,
-        reference_images: Optional[List[Image.Image]] = None,
-        num_outputs: int = DEFAULT_NUM_PROMPTS,
-        style_hint: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: EnhancementContext,
     ) -> List[str]:
         """
         Edit and enhance a prompt using the full pipeline.
         
         Args:
-            prompt (str): The input prompt
-            reference_images (List[PIL.Image], optional): List of uploaded reference images
-            num_outputs (int): Number of prompts to generate
-            style_hint (str, optional): Optional style hint for enhancement
-            context (Dict[str, Any], optional): Additional context for editing
+            context (EnhancementContext): Context containing all relevant information
             
         Returns:
             List[str]: List of enhanced prompts
         """
         try:
             # First route the prompt through the router
-            routed_prompt = self.prompt_router.route_prompt(prompt)
+            routed_prompt = self.prompt_router.route_prompt(context.user_prompt)
             
-            # Use style hint from context if provided
-            if context and 'style_hint' in context:
-                style_hint = context['style_hint']
-            
-            # Generate enhanced prompts using existing function
-            enhanced_prompts = generate_editable_prompts(
+            # Create new context with routed prompt
+            routed_context = EnhancementContext(
                 user_prompt=routed_prompt,
-                reference_images=reference_images,
-                num_outputs=num_outputs,
-                style_hint=style_hint
+                num_prompts=context.num_prompts,
+                reference_images=context.reference_images,
+                style_hint=context.style_hint,
+                product_description=context.product_description,
+                image_description=context.image_description,
+                intent=context.intent,
+                config=context.config
             )
             
-            return enhanced_prompts
+            # Generate enhanced prompts
+            return generate_editable_prompts(routed_context)
             
         except Exception as e:
-            print(f"Error editing prompt: {str(e)}")
-            return [""] * num_outputs
+            logger.error(f"Error editing prompt: {e}")
+            return [""] * context.num_prompts
     
     def batch_edit_prompts(
         self,
-        prompts: List[str],
-        reference_images: Optional[List[Image.Image]] = None,
-        num_outputs: int = DEFAULT_NUM_PROMPTS,
-        style_hint: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        contexts: List[EnhancementContext],
     ) -> List[List[str]]:
         """
         Edit multiple prompts in batch using the full pipeline.
         
         Args:
-            prompts (List[str]): List of input prompts
-            reference_images (List[PIL.Image], optional): List of uploaded reference images
-            num_outputs (int): Number of prompts to generate per input
-            style_hint (str, optional): Optional style hint for enhancement
-            context (Dict[str, Any], optional): Additional context for editing
+            contexts (List[EnhancementContext]): List of enhancement contexts
             
         Returns:
             List[List[str]]: List of enhanced prompt lists
         """
         try:
-            return [
-                self.edit_prompt(
-                    prompt=prompt,
-                    reference_images=reference_images,
-                    num_outputs=num_outputs,
-                    style_hint=style_hint,
-                    context=context
-                )
-                for prompt in prompts
-            ]
+            return [self.edit_prompt(context) for context in contexts]
         except Exception as e:
-            print(f"Error in batch editing prompts: {str(e)}")
-            return [[""] * num_outputs for _ in prompts]
+            logger.error(f"Error in batch editing prompts: {e}")
+            return [[""] * context.num_prompts for context in contexts]

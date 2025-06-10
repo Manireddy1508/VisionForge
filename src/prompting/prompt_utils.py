@@ -1,128 +1,176 @@
+"""
+Utility functions for prompt validation and processing.
+Provides dynamic template-based validation and field extraction.
+"""
+
 import re
-from typing import List, Tuple, Dict, Optional
+import logging
+from dataclasses import dataclass
+from typing import List, Tuple, Dict, Optional, Any, Set
 
 from prompting.constants import (
-    MIN_WORD_COUNT,
+    TEMPLATE_FIELDS,
     PROMPT_PREFIX,
     PROMPT_SUFFIX,
-    PROMPT_SETTINGS,
+    REQUIRED_ELEMENTS,
+    OPTIONAL_ELEMENTS,
+    PromptConfig,
+    DEFAULT_PROMPT_CONFIG,
 )
 
-# === Flexible Rules ===
-FLEXIBLE_PREFIX_PATTERNS = [r"it's very important that"]
+# === Logging Setup ===
+logger = logging.getLogger(__name__)
 
-FLEXIBLE_SUFFIX_PATTERNS = [
-    r"take all the time you need(?:ed)?(?:.*?)?achieve the best possible result",
-    r"achieve the best possible result",
-]
+@dataclass
+class ValidationResult:
+    """Structured result of prompt validation."""
+    is_valid: bool
+    missing_fields: Set[str]
+    invalid_fields: Dict[str, str]
+    warnings: List[str]
+    cleaned_prompt: str
 
+@dataclass
+class TemplateFieldMatch:
+    """Represents a matched template field in a prompt."""
+    field_name: str
+    field_type: str
+    value: str
+    start_pos: int
+    end_pos: int
 
 class PromptValidator:
     """
-    Validates and cleans prompts according to specified rules.
+    Validates and cleans prompts according to template fields and configuration.
+    Uses dynamic template structure from constants.py.
     """
 
-    def __init__(self, settings: Dict = PROMPT_SETTINGS, mode: str = "lenient"):
+    def __init__(self, config: PromptConfig = DEFAULT_PROMPT_CONFIG):
         """
         Initialize the prompt validator.
 
         Args:
-            settings (Dict): Validation settings
-            mode (str): Validation mode ("strict" or "lenient")
+            config: Validation configuration
         """
-        self.settings = settings
-        self.strict_mode = mode == "strict"
-        print(f"\n🎯 [DEBUG] Initialized PromptValidator in {mode} mode")
+        self.config = config
+        logger.info(f"Initialized PromptValidator with config: {config}")
 
-    def is_valid(self, prompt: str, allow_manual: bool = False) -> bool:
+    def validate(self, prompt: str, allow_manual: bool = False) -> ValidationResult:
         """
-        Check if a prompt is valid according to the rules.
+        Validate a prompt against template fields and configuration.
 
         Args:
             prompt (str): The prompt to validate
             allow_manual (bool): Whether to allow manual overrides
 
         Returns:
-            bool: Whether the prompt is valid
+            ValidationResult: Structured validation result
         """
-        prompt = prompt.strip()
-        words = prompt.split()
+        # Initialize result
+        result = ValidationResult(
+            is_valid=True,
+            missing_fields=set(),
+            invalid_fields={},
+            warnings=[],
+            cleaned_prompt=prompt.strip()
+        )
 
-        if len(words) <= MIN_WORD_COUNT:
-            print("⛔ [VALIDATOR] Too few words")
-            return False if not allow_manual else True
+        # Clean the prompt
+        result.cleaned_prompt = self.clean(result.cleaned_prompt)
+        if not result.cleaned_prompt:
+            result.is_valid = False
+            result.warnings.append("Empty prompt after cleaning")
+            return result
 
-        if self.settings.get(
-            "enforce_single_sentence"
-        ) and not self._is_single_sentence(prompt):
-            print("⛔ [VALIDATOR] More than one sentence")
-            return False if not allow_manual else True
+        # Check word count
+        words = result.cleaned_prompt.split()
+        if len(words) < self.config.min_word_count:
+            result.warnings.append(f"Too few words (minimum: {self.config.min_word_count})")
+            if not allow_manual:
+                result.is_valid = False
+                return result
 
-        if self.settings.get("strip_quotes") and prompt.startswith(("'", '"')):
-            print("⛔ [VALIDATOR] Starts with quote")
-            return False if not allow_manual else True
+        # Check single sentence
+        if self.config.enforce_single_sentence and not self._is_single_sentence(result.cleaned_prompt):
+            result.warnings.append("Multiple sentences detected")
+            if not allow_manual:
+                result.is_valid = False
+                return result
 
-        if self.settings.get("suppress_numbering") and prompt.lstrip()[0].isdigit():
-            print("⛔ [VALIDATOR] Starts with number")
-            return False if not allow_manual else True
+        # Extract and validate template fields
+        field_matches = self._extract_template_fields(result.cleaned_prompt)
+        logger.debug(f"Found {len(field_matches)} template fields in prompt")
+        
+        # Check required fields
+        for field_name in REQUIRED_ELEMENTS:
+            if not any(m.field_name == field_name for m in field_matches):
+                result.missing_fields.add(field_name)
+                result.warnings.append(f"Missing required field: {field_name}")
+                if not allow_manual:
+                    result.is_valid = False
 
-        if self.settings.get("require_realistic_scale") and not self._has_valid_suffix(
-            prompt, words
-        ):
-            print("⛔ [VALIDATOR] Suffix not found")
-            return False if not allow_manual else True
+        # Validate field constraints
+        for match in field_matches:
+            field = TEMPLATE_FIELDS.get(match.field_name)
+            if field and field.constraints:
+                for constraint in field.constraints:
+                    if not self._validate_constraint(match.value, constraint):
+                        result.invalid_fields[match.field_name] = constraint
+                        result.warnings.append(f"Invalid {match.field_name}: {constraint}")
+                        if not allow_manual:
+                            result.is_valid = False
 
-        if not self._has_valid_prefix(prompt):
-            print("⛔ [VALIDATOR] Prefix not found")
-            return False if not allow_manual else True
+        # Check prefix/suffix if required
+        if self.config.require_realistic_scale:
+            if not result.cleaned_prompt.lower().startswith(PROMPT_PREFIX.lower()):
+                result.warnings.append(f"Missing required prefix: {PROMPT_PREFIX}")
+                if not allow_manual:
+                    result.is_valid = False
+            if not result.cleaned_prompt.lower().endswith(PROMPT_SUFFIX.lower()):
+                result.warnings.append(f"Missing required suffix: {PROMPT_SUFFIX}")
+                if not allow_manual:
+                    result.is_valid = False
 
-        print("✅ [VALIDATOR] Prompt is valid")
-        return True
+        logger.debug(f"Validation result: {result}")
+        return result
 
     def _is_single_sentence(self, prompt: str) -> bool:
-        """
-        Check if the prompt is a single sentence.
+        """Check if the prompt is a single sentence."""
+        # Split on sentence boundaries
+        sentences = [s.strip() for s in re.split(r"[.!?]+", prompt) if s.strip()]
+        return len(sentences) <= 1
 
-        Args:
-            prompt (str): The prompt to check
+    def _extract_template_fields(self, prompt: str) -> List[TemplateFieldMatch]:
+        """Extract template fields from the prompt."""
+        matches = []
+        for field_name, field in TEMPLATE_FIELDS.items():
+            # Look for field in square brackets
+            pattern = rf"\[{field.name}\]"
+            for match in re.finditer(pattern, prompt, re.IGNORECASE):
+                # Extract the value between brackets
+                start = match.start()
+                end = match.end()
+                value = prompt[start:end].strip("[]")
+                
+                matches.append(TemplateFieldMatch(
+                    field_name=field_name,
+                    field_type=field.field_type.name,
+                    value=value,
+                    start_pos=start,
+                    end_pos=end
+                ))
+        return matches
 
-        Returns:
-            bool: Whether the prompt is a single sentence
-        """
-        if any(re.search(pat, prompt.lower()) for pat in FLEXIBLE_SUFFIX_PATTERNS):
+    def _validate_constraint(self, value: str, constraint: str) -> bool:
+        """Validate a field value against its constraint."""
+        # Basic constraint validation - can be extended for specific constraints
+        if "must be" in constraint.lower():
+            return bool(value.strip())
             return True
-        return len([s for s in re.split(r"[.!?]+", prompt.strip()) if s.strip()]) <= 1
-
-    def _has_valid_prefix(self, prompt: str) -> bool:
-        """
-        Check if the prompt has a valid prefix.
-
-        Args:
-            prompt (str): The prompt to check
-
-        Returns:
-            bool: Whether the prompt has a valid prefix
-        """
-        text_start = " ".join(prompt.strip().lower().split()[:30])
-        return any(re.search(pat, text_start) for pat in FLEXIBLE_PREFIX_PATTERNS)
-
-    def _has_valid_suffix(self, prompt: str, words: List[str]) -> bool:
-        """
-        Check if the prompt has a valid suffix.
-
-        Args:
-            prompt (str): The prompt to check
-            words (List[str]): List of words in the prompt
-
-        Returns:
-            bool: Whether the prompt has a valid suffix
-        """
-        tail = " ".join(words[-30:]).lower()
-        return any(re.search(pat, tail) for pat in FLEXIBLE_SUFFIX_PATTERNS)
 
     def clean(self, prompt: str) -> str:
         """
-        Clean a prompt according to the settings.
+        Clean a prompt according to configuration.
 
         Args:
             prompt (str): The prompt to clean
@@ -130,20 +178,28 @@ class PromptValidator:
         Returns:
             str: The cleaned prompt
         """
+        # First strip any leading/trailing whitespace
         cleaned = prompt.strip()
-        if self.settings.get("strip_quotes"):
-            cleaned = cleaned.strip('"').strip("'")
-        if self.settings.get("suppress_numbering"):
+        
+        # Clean quotes - handle both single and double quotes
+        if self.config.strip_quotes:
+            # Remove any combination of quotes at the start and end
+            cleaned = cleaned.strip('"\'')
+            # Also remove any escaped quotes
+            cleaned = cleaned.replace('\\"', '').replace("\\'", '')
+            
+        # Clean numbering
+        if self.config.suppress_numbering:
             cleaned = cleaned.lstrip("0123456789. )").strip()
+            
         return cleaned
-
 
 def extract_valid_prompts(
     raw_output: str,
     num_prompts: int,
     fallback_prompt: str,
-    mode: str = "lenient",
-    allow_manual_override: bool = False,
+    config: PromptConfig = DEFAULT_PROMPT_CONFIG,
+    allow_manual_override: bool = True,
     return_metadata: bool = False,
 ) -> List[str] | List[Tuple[str, bool]]:
     """
@@ -153,37 +209,69 @@ def extract_valid_prompts(
         raw_output (str): Raw output from GPT
         num_prompts (int): Number of prompts to extract
         fallback_prompt (str): Fallback prompt if not enough valid prompts
-        mode (str): Validation mode ("strict" or "lenient")
+        config (PromptConfig): Validation configuration
         allow_manual_override (bool): Whether to allow manual overrides
         return_metadata (bool): Whether to return metadata with prompts
 
     Returns:
         List[str] | List[Tuple[str, bool]]: List of valid prompts, optionally with metadata
     """
-    print(f"\n🎯 [DEBUG] Extracting {num_prompts} valid prompts")
-    print(f"📌 [DEBUG] Mode: {mode}")
-    print(f"📌 [DEBUG] Allow manual override: {allow_manual_override}")
+    logger.info(f"Extracting {num_prompts} valid prompts from raw output")
+    logger.debug(f"Raw output: {raw_output}")
+    logger.debug(f"Mode: {'manual override' if allow_manual_override else 'strict'}")
 
-    validator = PromptValidator(mode=mode)
+    validator = PromptValidator(config=config)
+    
+    # Split and clean the raw output
     raw_lines = raw_output.split("\n")
-    cleaned = [validator.clean(line) for line in raw_lines if line.strip()]
+    cleaned = []
+    for line in raw_lines:
+        if line.strip():
+            # First clean the line
+            cleaned_line = validator.clean(line)
+            # Remove any remaining quotes at the start/end
+            cleaned_line = cleaned_line.strip('"\'')
+            # Remove any escaped quotes
+            cleaned_line = cleaned_line.replace('\\"', '').replace("\\'", '')
+            if cleaned_line:
+                cleaned.append(cleaned_line)
+    
+    logger.debug(f"Cleaned lines: {cleaned}")
 
     results = []
     for line in cleaned:
-        is_valid = validator.is_valid(line, allow_manual=allow_manual_override)
-        if is_valid:
+        validation = validator.validate(line, allow_manual=allow_manual_override)
+        if validation.is_valid:
             results.append((line, False)) if return_metadata else results.append(line)
+            logger.debug(f"Accepted prompt: {line}")
         else:
-            print(f"⚠️ [DEBUG] Rejected: {line}")
+            logger.warning(f"Rejected prompt: {line}")
+            logger.debug(f"Validation issues: {validation.warnings}")
 
+    # Pad with fallback prompts if needed
     while len(results) < num_prompts:
         result = (fallback_prompt, True) if return_metadata else fallback_prompt
         results.append(result)
-        print(f"📝 [DEBUG] Added fallback prompt: {fallback_prompt}")
+        logger.debug(f"Added fallback prompt: {fallback_prompt}")
 
+    # Truncate if too many
     if len(results) > num_prompts:
         results = results[:num_prompts]
-        print(f"📝 [DEBUG] Truncated to {num_prompts} prompts")
+        logger.debug(f"Truncated to {num_prompts} prompts")
 
-    print(f"✅ [DEBUG] Extracted {len(results)} valid prompts")
+    logger.info(f"Extracted {len(results)} valid prompts: {results}")
     return results
+
+def extract_template_fields(prompt: str) -> Dict[str, str]:
+    """
+    Extract template fields from a prompt into a structured format.
+
+    Args:
+        prompt (str): The prompt to parse
+
+    Returns:
+        Dict[str, str]: Dictionary of field names to values
+    """
+    validator = PromptValidator()
+    matches = validator._extract_template_fields(prompt)
+    return {match.field_name: match.value for match in matches}

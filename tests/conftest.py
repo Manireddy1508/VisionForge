@@ -12,7 +12,7 @@ def mock_openai():
     """Mock OpenAI API responses."""
     mock = MagicMock()
     mock.images.generate.return_value = MagicMock(
-        data=[MagicMock(url="/Users/mani/cloud/cloud-gen-project/car1.webp")]
+        data=[MagicMock(b64_json="base64_encoded_image_data")]
     )
     return mock
 

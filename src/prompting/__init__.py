@@ -10,8 +10,6 @@ from .model_manager import ModelManager
 from .constants import (
     PROMPT_PREFIX,
     PROMPT_SUFFIX,
-    NEGATIVE_PROMPT_PREFIX,
-    NEGATIVE_PROMPT_SUFFIX,
 )
 
 __all__ = [
@@ -21,6 +19,4 @@ __all__ = [
     'ModelManager',
     'PROMPT_PREFIX',
     'PROMPT_SUFFIX',
-    'NEGATIVE_PROMPT_PREFIX',
-    'NEGATIVE_PROMPT_SUFFIX',
 ] 
