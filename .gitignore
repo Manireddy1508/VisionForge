@@ -40,4 +40,12 @@ volumes/
 
 # OS specific
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Model files
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx 
