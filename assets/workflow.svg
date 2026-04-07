@@ -1,0 +1,92 @@
+<svg width="100%" viewBox="0 0 860 699" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#888780"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="860" height="699" fill="#FFFFFF"/>
+
+  <rect x="340" y="30" width="160" height="36" rx="18" fill="#F1EFE8" stroke="#888780" stroke-width="1.5"/>
+  <text x="420" y="48" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#444441" dominant-baseline="central" text-anchor="middle">Start request</text>
+
+  <rect x="310" y="85" width="220" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+  <text x="420" y="103" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0C447C" dominant-baseline="central" text-anchor="middle">Collect prompt and images</text>
+  <text x="420" y="123" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#185FA5" dominant-baseline="central" text-anchor="middle">Text, files, and settings</text>
+
+  <polygon points="420,160 470,190 420,220 370,190" fill="#F8F7F2" stroke="#888780" stroke-width="1.5"/>
+  <text x="420" y="190" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#444441" dominant-baseline="central" text-anchor="middle">Reference image?</text>
+
+  <rect x="70" y="245" width="220" height="56" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+  <text x="180" y="263" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#633806" dominant-baseline="central" text-anchor="middle">Analyze with GPT-4 Vision</text>
+  <text x="180" y="283" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#854F0B" dominant-baseline="central" text-anchor="middle">Extract style and mood</text>
+
+  <rect x="570" y="245" width="220" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+  <text x="680" y="263" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0C447C" dominant-baseline="central" text-anchor="middle">Use text prompt only</text>
+  <text x="680" y="283" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#185FA5" dominant-baseline="central" text-anchor="middle">Skip image enrichment</text>
+
+  <rect x="70" y="335" width="220" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+  <text x="180" y="353" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#444441" dominant-baseline="central" text-anchor="middle">Milvus retrieval</text>
+  <text x="180" y="373" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5F5E5A" dominant-baseline="central" text-anchor="middle">Search prior examples</text>
+
+  <rect x="310" y="335" width="220" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="420" y="353" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#3C3489" dominant-baseline="central" text-anchor="middle">Enhance and route prompt</text>
+  <text x="420" y="373" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#534AB7" dominant-baseline="central" text-anchor="middle">Edit and route prompt</text>
+
+  <rect x="310" y="425" width="220" height="56" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+  <text x="420" y="443" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#633806" dominant-baseline="central" text-anchor="middle">Generate image</text>
+  <text x="420" y="463" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#854F0B" dominant-baseline="central" text-anchor="middle">Invoke OpenAI image model</text>
+
+  <rect x="310" y="515" width="280" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+  <text x="450" y="533" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#444441" dominant-baseline="central" text-anchor="middle">Persist outputs and session state</text>
+  <text x="450" y="553" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5F5E5A" dominant-baseline="central" text-anchor="middle">Store images and embeddings</text>
+
+  <rect x="620" y="515" width="180" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+  <text x="710" y="533" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#0C447C" dominant-baseline="central" text-anchor="middle">Dashboard refresh</text>
+  <text x="710" y="553" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#185FA5" dominant-baseline="central" text-anchor="middle">Show status and search data</text>
+
+  <rect x="620" y="425" width="180" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1.5"/>
+  <text x="710" y="443" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#444441" dominant-baseline="central" text-anchor="middle">Return error state</text>
+  <text x="710" y="463" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5F5E5A" dominant-baseline="central" text-anchor="middle">Record failed status</text>
+
+  <rect x="340" y="600" width="160" height="36" rx="18" fill="#F1EFE8" stroke="#888780" stroke-width="1.5"/>
+  <text x="420" y="618" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#444441" dominant-baseline="central" text-anchor="middle">End request</text>
+
+  <rect x="620" y="595" width="180" height="60" rx="10" fill="#FFFFFF" stroke="#888780" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="640" y="616" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">CI coverage gate</text>
+  <text x="640" y="640" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#3C3489">80%</text>
+
+  <path d="M 420 66 L 420 85" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 420 141 L 420 160" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 390 208 L 220 245" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 450 208 L 640 245" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <text x="300" y="219" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">yes</text>
+  <text x="540" y="219" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">no</text>
+
+  <path d="M 180 301 L 180 335" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 680 301 L 680 320 L 530 320 L 530 335" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 290 363 L 310 363" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 180 391 L 180 405 L 310 405 L 310 363" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+  <text x="195" y="401" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">(fallback on retrieval failure)</text>
+
+  <path d="M 420 391 L 420 425" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 530 453 L 620 453" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+  <text x="551" y="443" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">error</text>
+  <path d="M 420 481 L 420 515" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+  <path d="M 590 543 L 620 543" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)" stroke-dasharray="4 3"/>
+  <text x="595" y="533" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">(async)</text>
+  <path d="M 420 571 L 420 600" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+
+  <g transform="translate(88,671)">
+    <rect x="0" y="-8" width="10" height="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+    <text x="16" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">Gateway / interface</text>
+    <rect x="150" y="-8" width="10" height="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+    <text x="166" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">Agent / orchestrator</text>
+    <rect x="319" y="-8" width="10" height="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+    <text x="335" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">Tool / service</text>
+    <rect x="462" y="-8" width="10" height="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+    <text x="478" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">Storage / state</text>
+    <rect x="600" y="-8" width="10" height="10" fill="#F1EFE8" stroke="#888780" stroke-width="1"/>
+    <text x="616" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#888780">Start / end</text>
+  </g>
+</svg>

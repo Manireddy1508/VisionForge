@@ -1,196 +1,114 @@
-# AI Image Generation Playground
+# VisionForge
 
-A powerful AI-powered image generation system that combines advanced prompt engineering, image analysis, and vector search capabilities to create high-quality images. The system uses a combination of GPT-4 Vision for image analysis, OpenAI's DALL-E for image generation, and Milvus for vector similarity search.
+> Milvus-backed AI image generation platform that analyzes reference images, enriches prompts, and serves generation workflows through Gradio and Streamlit interfaces.
 
-## 🏗️ System Architecture
+![Language](https://img.shields.io/badge/python-3.12-3776AB)
+![Last Commit](https://img.shields.io/github/last-commit/Manireddy1508/VisionForge)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-production-blue)
 
-The system consists of several key components:
+---
 
-### Core Components
+## Overview
 
-1. **Prompt Enhancement System**
-   - `PromptEnhancer`: Enhances user prompts using GPT-4
-   - `PromptRouter`: Routes prompts to appropriate models
-   - `PromptEditor`: Allows manual prompt editing
-   - `ImageDescriber`: Analyzes reference images using BLIP and GPT-4 Vision
+VisionForge is a multi-service image generation platform built by Manichandra Reddy Bethi for teams that need stronger prompt quality, reusable visual context, and searchable generation history in a single workflow. It combines a Gradio creation interface, a Streamlit dashboard, OpenAI image and vision models, CLIP embeddings, and Milvus vector search to improve prompt construction and image reuse. The system runs locally as a Docker Compose stack with Milvus, MinIO, and etcd, and it also includes GitHub Actions pipelines for container build, test, and Google Cloud Run deployment. Generated images are written to Google Cloud Storage, while prompt, input-image, and output-image embeddings are stored in Milvus for later retrieval and dashboard inspection.
 
-2. **Vector Database (Milvus)**
-   - Stores and searches similar prompts and images
-   - Enables prompt enhancement using historical data
-   - Maintains collections for prompts and images
+## Architecture
 
-3. **Image Generation**
-   - Uses OpenAI's DALL-E for high-quality image generation
-   - Supports multiple output variations
-   - Configurable parameters (steps, guidance, seed)
+![System architecture](assets/architecture.svg)
 
-4. **Web Interface**
-   - Gradio-based main application (port 7860)
-   - Streamlit-based dashboard (port 7861)
-   - Interactive prompt editing and image generation
+> End-to-end component view of the Gradio generation app, prompt orchestration modules, OpenAI model calls, Milvus retrieval layer, storage services, dashboard, and deployment infrastructure.
 
-### Infrastructure
+## Workflow
 
-- **Docker-based Deployment**
-  - Multi-container setup with Docker Compose
-  - Services: App, Dashboard, Milvus, MinIO, etcd
-  - Volume management for persistent storage
+![Request workflow](assets/workflow.svg)
 
-## 🚀 Getting Started
+> Request lifecycle from user input through reference-image analysis, prompt enhancement, optional vector retrieval, image generation, persistence, and dashboard refresh.
+
+## Tech stack
+
+| Category | Technology | Purpose |
+|----------|-----------|---------|
+| Language | Python 3.12 | Application runtime defined in the Docker image and CI workflow |
+| Framework | Gradio | Primary image generation interface served from `src/app.py` |
+| Framework | Streamlit | Operational dashboard for sessions, searches, and generation metrics |
+| ML / AI | OpenAI image API | Generates final images from enhanced prompts |
+| ML / AI | GPT-4 Vision Preview | Analyzes uploaded reference images before prompt construction |
+| ML / AI | CLIP (`openai/clip-vit-base-patch32`) | Produces text and image embeddings for similarity search |
+| ML / AI | Hugging Face Transformers | Loads CLIP model and processor |
+| Vector store | Milvus 2.3.3 | Stores prompt, input-image, and output-image embeddings |
+| Database | etcd 3.5.5 | Metadata backend used by the local Milvus deployment |
+| Cloud | Google Cloud Storage | Stores generated images with prompt metadata |
+| Cloud | Google Cloud Run | Hosts the deployed application in `us-central1` |
+| Cloud | Google Container Registry | Stores built container images from GitHub Actions |
+| Containerisation | Docker | Builds the application image and packages runtime dependencies |
+| Containerisation | Docker Compose | Runs the application, dashboard, and Milvus services together |
+| CI / CD | GitHub Actions | Builds, tests, and deploys the project |
+| Monitoring | Streamlit dashboard | Exposes session counts, generation status, and similarity-search inspection |
+
+## Repository structure
+
+```text
+VisionForge/
+├── assets/                    # GitHub-rendered architecture and workflow diagrams
+├── docs/                      # Deployment notes and environment-specific operating guidance
+│   └── deployment.md          # Local, development, and Cloud Run deployment documentation
+├── src/                       # Application source code
+│   ├── app.py                 # Gradio entry point for prompt orchestration and image generation
+│   ├── dashboard/             # Streamlit dashboard for session and similarity-search inspection
+│   ├── image_generator.py     # OpenAI image generation and Google Cloud Storage upload logic
+│   ├── milvus_utils.py        # Milvus connection, schema, indexing, and embedding utilities
+│   └── prompting/             # Prompt routing, enhancement, editing, and image description modules
+├── tests/                     # Automated tests for image-generation flows
+│   ├── conftest.py            # Shared pytest fixtures and test configuration
+│   └── test_image_generator.py # Validation for generation behavior
+├── .env.example               # Required environment variable names
+├── .github/workflows/         # CI, build, and deployment pipelines
+├── Dockerfile                 # Python 3.12 container image definition
+├── docker-compose.yml         # Local multi-container runtime with Milvus dependencies
+└── requirements.txt           # Python dependency manifest
+```
+
+## Getting started
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Python 3.12+
-- OpenAI API key
-- Google Cloud credentials (for cloud deployment)
+- Docker
+- Docker Compose
+- Python 3.12
 
-### Environment Variables
+### Installation
 
-Create a `.env` file with:
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_IMAGE_MODEL=dall-e-3
-GOOGLE_CLOUD_PROJECT=your_gcp_project
-GCS_BUCKET_NAME=your_bucket_name
-```
-
-### Local Development
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Manireddy1508/newcrux.git
-   cd newcrux
-   ```
-
-2. **Set up Python environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-   pip install -r requirements.txt
-   ```
-
-3. **Run with Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
-
-4. **Access the applications:**
-   - Main app: http://localhost:7860
-   - Dashboard: http://localhost:7861
-
-### Docker Services
-
-The system runs several Docker services:
-
-- **app**: Main Gradio application (port 7860)
-- **dashboard**: Streamlit dashboard (port 7861)
-- **standalone**: Milvus vector database
-- **minio**: Object storage for Milvus
-- **etcd**: Distributed key-value store for Milvus
-
-## 📁 Project Structure
-
-```
-.
-├── src/
-│   ├── app.py                 # Main Gradio application
-│   ├── image_generator.py     # Image generation logic
-│   ├── milvus_utils.py       # Vector database operations
-│   ├── dashboard/            # Streamlit dashboard
-│   └── prompting/            # Prompt engineering modules
-│       ├── prompt_enhancer.py
-│       ├── prompt_router.py
-│       ├── prompt_editor.py
-│       ├── image_describer.py
-│       └── model_manager.py
-├── tests/                    # Test suite
-├── docs/                     # Documentation
-├── volumes/                  # Persistent storage
-├── Dockerfile               # Main application container
-└── docker-compose.yml       # Multi-container setup
-```
-
-## 🔧 Key Features
-
-1. **Advanced Prompt Engineering**
-   - GPT-4 powered prompt enhancement
-   - Reference image analysis
-   - Similar prompt search and reuse
-
-2. **Image Generation**
-   - Multiple output variations
-   - Configurable parameters
-   - Reference image support
-
-3. **Vector Search**
-   - Similar prompt retrieval
-   - Image similarity search
-   - Historical data reuse
-
-4. **Monitoring and Analytics**
-   - Streamlit dashboard
-   - Operation logging
-   - Performance metrics
-
-## 🛠️ Development
-
-### Adding New Features
-
-1. **New Models**
-   - Add model configuration in `src/prompting/model_manager.py`
-   - Update `PromptRouter` to handle new model types
-
-2. **New Prompt Templates**
-   - Add templates in `src/prompting/prompt_templates.py`
-   - Update `PromptEnhancer` to use new templates
-
-3. **New Vector Search Features**
-   - Extend `milvus_utils.py` with new search functions
-   - Update collections schema if needed
-
-### Testing
-
-Run tests with:
 ```bash
-pytest tests/
+git clone https://github.com/Manireddy1508/VisionForge.git
+cd VisionForge
+docker compose build
 ```
 
-## 📊 Monitoring
+### Configuration
 
-The Streamlit dashboard (port 7861) provides:
-- System health metrics
-- Operation logs
-- Performance statistics
-- Resource usage
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | Authenticates OpenAI vision and image generation requests |
+| `OPENAI_IMAGE_MODEL` | Selects the image model used by the generator |
+| `MILVUS_HOST` | Points the application and dashboard to the Milvus host |
+| `MILVUS_PORT` | Sets the Milvus service port |
+| `GCS_BUCKET_NAME` | Target Google Cloud Storage bucket for generated images |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project identifier used by the runtime environment |
 
-## 🔐 Security
+### Run
 
-- API keys stored in environment variables
-- Docker container isolation
-- Secure volume mounting
-- No sensitive data in version control
+```bash
+docker compose up --build
+```
 
-## 🤝 Contributing
+## Author
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+**Manichandra Reddy Bethi** — Machine Learning Engineer  
+Portfolio: [bethimanichandrareddy.com](https://bethimanichandrareddy.com)  
+GitHub: [Manireddy1508](https://github.com/Manireddy1508)  
+LinkedIn: [bethimanichandrareddy](https://linkedin.com/in/bethimanichandrareddy)
 
-## 📝 License
+## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Authors
-
-- Manireddy1508 - Initial work
-
-## 🙏 Acknowledgments
-
-- OpenAI for GPT-4 and DALL-E
-- Milvus for vector database
-- Gradio and Streamlit for UI
-- All contributors and users 
+MIT © Manichandra Reddy Bethi
